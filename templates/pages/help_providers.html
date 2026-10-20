@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Anleitung für Raumgeber{% endblock %}
+{% block content %}
+<article class="prose">
+<p><a href="{% url 'pages:help' %}">← Hilfe</a></p>
+<h1>Anleitung für Raumgeber</h1>
+<p class="lead">So bietet ihr euren Raum an. Ihr braucht dafür kein Konto. Es kostet nichts.</p>
+<nav aria-label="Inhalt" class="toc"><ol>
+  <li><a href="#eintragen">Raum eintragen</a></li>
+  <li><a href="#sichtbarkeit">Öffentlich oder nicht öffentlich?</a></li>
+  <li><a href="#anfragen">Anfragen beantworten</a></li>
+  <li><a href="#aktuell">Angaben aktuell halten</a></li>
+  <li><a href="#link">Der Bearbeitungslink</a></li>
+  <li><a href="#post">Ihr habt Post von uns bekommen?</a></li>
+</ol></nav>
+
+<h2 id="eintragen">1. Raum eintragen</h2>
+<ol class="steps">
+  <li>Klickt auf <a href="{% url 'venues:submit' %}">Raum anbieten</a>.</li>
+  <li>Füllt das Formular aus. Felder mit „(Pflicht)“ müsst ihr ausfüllen. Alle anderen sind freiwillig.</li>
+  <li>Tragt jeden Raum einzeln ein. Kreuzt an, an welchen Tagen und zu welchen Tageszeiten er meistens frei ist.</li>
+  <li>Gebt eine E-Mail-Adresse für die Verwaltung an. Sie wird nicht angezeigt.</li>
+  <li>Wir schicken euch eine E-Mail. Klickt auf den Link und dann auf „E-Mail bestätigen“.</li>
+  <li>{{ OPERATOR_NAME }} prüft den Eintrag. Danach ist er sichtbar. Ihr bekommt eine E-Mail.</li>
+</ol>
+
+<h2 id="sichtbarkeit">2. Öffentlich oder nicht öffentlich?</h2>
+<div class="compare">
+  <section class="card">
+    <h3>Öffentlich gelistet</h3>
+    <p>Gut für Bürgerzentren, Gemeindesäle, Vereinsheime, Gaststätten und Büros.</p>
+    <ul>
+      <li>Geprüfte Gruppen sehen Name, Adresse und Kontakt.</li>
+      <li>Gruppen melden sich direkt bei euch.</li>
+    </ul>
+  </section>
+  <section class="card">
+    <h3>Nicht öffentlich</h3>
+    <p>Gut für private Räume, zum Beispiel ein Wohnzimmer für Hauskonzerte oder Lesungen.</p>
+    <ul>
+      <li>Gruppen sehen nur Stadtteil, Größe, Ausstattung und wofür der Raum passt.</li>
+      <li>Gruppen schicken euch eine Anfrage über uns.</li>
+      <li>Ihr entscheidet bei jeder Anfrage: zusagen oder absagen.</li>
+      <li>Nur nach eurer Zusage sieht diese eine Gruppe Name, Adresse und Kontakt.</li>
+    </ul>
+  </section>
+</div>
+<p>Bei nicht öffentlichen Orten gebt ihr einen kurzen Titel an, zum Beispiel „Großes Wohnzimmer mit Flügel“. Bitte schreibt keinen Namen und keine Adresse in Titel oder Beschreibung.</p>
+
+<h2 id="anfragen">3. Anfragen beantworten</h2>
+<p>Bei nicht öffentlichen Orten bekommt ihr Anfragen per E-Mail. Darin steht, welche Gruppe den Raum wofür, wann und für wie viele Personen braucht.</p>
+<ol class="steps">
+  <li>Klickt auf den Link in der E-Mail.</li>
+  <li>Ihr könnt der Gruppe eine kurze Nachricht schreiben, zum Beispiel einen Terminvorschlag.</li>
+  <li>Klickt auf „Zusagen“ oder „Absagen“.</li>
+</ol>
+<p>Mit der Zusage ist noch nichts gebucht. Die Gruppe meldet sich bei euch, und ihr sprecht alles direkt ab. Ohne Antwort endet eine Anfrage nach 14 Tagen von selbst.</p>
+
+<h2 id="aktuell">4. Angaben aktuell halten</h2>
+<p>Gruppen sollen nur Räume finden, die es wirklich gibt. Deshalb fragen wir etwa alle 6 Monate per E-Mail nach, ob eure Angaben noch stimmen.</p>
+<ul>
+  <li>Klickt auf den Link in der E-Mail und dann auf „Ja, alles ist noch aktuell“. Das dauert weniger als eine Minute.</li>
+  <li>Wenn ihr nicht antwortet, erinnern wir euch nach 3 Wochen.</li>
+  <li>Nach 6 Wochen ohne Antwort pausieren wir den Eintrag. Gelöscht wird nichts. Mit einem Klick ist er wieder sichtbar.</li>
+  <li>Wenn ihr eine Anfrage beantwortet, zählt das auch als Bestätigung.</li>
+</ul>
+
+<h2 id="link">5. Der Bearbeitungslink</h2>
+<p>Statt eines Passworts bekommt ihr einen persönlichen Link per E-Mail. Damit könnt ihr:</p>
+<ul>
+  <li>Angaben ändern und Räume hinzufügen</li>
+  <li>den Eintrag pausieren, zum Beispiel in den Ferien</li>
+  <li>den Eintrag ganz entfernen</li>
+</ul>
+<p>Link verloren? <a href="{% url 'venues:request_link' %}">Neuen Link anfordern</a>. Der alte Link gilt dann nicht mehr.</p>
+
+<h2 id="post">6. Ihr habt Post von uns bekommen?</h2>
+<p>Wir suchen Räume in öffentlichen Quellen, zum Beispiel auf Webseiten oder in OpenStreetMap. Dann fragen wir per E-Mail, ob ihr mitmachen wollt.</p>
+<ul>
+  <li>Euer Ort ist erst sichtbar, wenn ihr zustimmt.</li>
+  <li>Ihr wollt nicht? Klickt im Link auf „Nicht aufnehmen“. Wir fragen dann nie wieder.</li>
+  <li>Wir fragen höchstens zweimal: einmal und eine Erinnerung.</li>
+</ul>
+</article>
+{% endblock %}

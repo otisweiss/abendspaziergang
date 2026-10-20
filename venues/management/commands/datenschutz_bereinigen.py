@@ -12,7 +12,8 @@ from django.core.management.base import BaseCommand
 from django.db.models import Q
 from django.utils import timezone
 
-from venues.models import ListingRequest, Venue
+from venues.models import ListingRequest, UsageRequest, Venue
+from venues.services import send_templated_mail
 
 
 class Command(BaseCommand):
@@ -59,6 +60,22 @@ class Command(BaseCommand):
             Venue.objects.filter(pk__in=venue_ids, status=Venue.Status.REQUESTED).update(
                 status=Venue.Status.RESEARCHED, edit_token_hash="", edit_token_expires_at=None
             )
+
+        # Unbeantwortete Nutzungsanfragen: Gruppe informieren, Link ungültig machen
+        expired_usage = UsageRequest.objects.filter(status=UsageRequest.Status.OPEN, expires_at__lt=now).select_related("venue")
+        self.stdout.write(f"Abgelaufene Nutzungsanfragen: {expired_usage.count()}")
+        if not dry_run:
+            for item in expired_usage:
+                item.status = UsageRequest.Status.EXPIRED
+                item.token_hash = ""
+                item.save(update_fields=["status", "token_hash"])
+                send_templated_mail("usage_expired", item.reply_email, {"req": item, "venue": item.venue})
+
+        # Alte Nutzungsanfragen löschen. Damit endet auch ein gewährter Zugang zu den Details.
+        old_usage = UsageRequest.objects.filter(created_at__lt=now - timedelta(days=settings.USAGE_REQUEST_RETENTION_DAYS))
+        self.stdout.write(f"Alte Nutzungsanfragen: {old_usage.count()}")
+        if not dry_run:
+            old_usage.delete()
 
         # Abgelaufene Bearbeitungslinks entfernen
         tokens = Venue.objects.filter(edit_token_expires_at__lt=now).exclude(edit_token_hash="")

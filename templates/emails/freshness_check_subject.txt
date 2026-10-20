@@ -1,0 +1,1 @@
+Ist euer Raum „{{ venue.name }}“ noch aktuell?

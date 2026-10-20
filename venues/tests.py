@@ -9,9 +9,9 @@ from django.utils import timezone
 
 from accounts.models import GroupProfile, User
 
-from .models import Equipment, ListingRequest, Purpose, Room, TimeSlot, Venue
+from .models import Equipment, ListingRequest, Purpose, Room, TimeSlot, UsageRequest, Venue
 from .search import search_venues
-from .services import ListingRequestError, send_listing_request
+from .services import ListingRequestError, run_freshness_checks, send_listing_request
 
 
 def make_group_user(email="chor@example.org", status=GroupProfile.Status.APPROVED):
@@ -27,7 +27,9 @@ def make_venue(name="Bürgerhaus", status=Venue.Status.LISTED, **kwargs):
 
 
 def extract_url(body):
-    return re.search(r"https?://\S+", body).group(0)
+    """Erster Link auf die eigene Seite (nicht etwa eine Quellenangabe)."""
+    match = re.search(r"http://testserver/\S+", body) or re.search(r"https?://\S+", body)
+    return match.group(0)
 
 
 class AccessTests(TestCase):
@@ -92,7 +94,7 @@ class SearchTests(TestCase):
 class SubmissionFlowTests(TestCase):
     def post_data(self, **extra):
         data = {
-            "name": "Vereinsheim Test", "operator": "TV e.V.", "operator_type": "gemeinnuetzig", "street": "Weg 2",
+            "visibility": "oeffentlich", "name": "Vereinsheim Test", "operator": "TV e.V.", "operator_type": "gemeinnuetzig", "street": "Weg 2",
             "postcode": "50823", "quarter": "Neuehrenfeld", "contact_email": "vermietung@example.org",
             "manager_email": "Vorstand@Example.org", "consent": "on", "privacy": "on",
             "rooms-TOTAL_FORMS": "1", "rooms-INITIAL_FORMS": "0", "rooms-MIN_NUM_FORMS": "1", "rooms-MAX_NUM_FORMS": "1000",
@@ -140,9 +142,9 @@ class ListingRequestTests(TestCase):
         self.assertEqual(venue.status, Venue.Status.REQUESTED)
         path = extract_url(mail.outbox[0].body).replace("http://testserver", "")
         response = self.client.get(path)
-        self.assertContains(response, "bisher nirgends sichtbar")
+        self.assertContains(response, "bisher nirgends zu sehen")
         data = {
-            "action": "save", "name": "Bibliothek", "operator_type": "oeffentlich", "street": "Teststr. 1",
+            "action": "save", "visibility": "oeffentlich", "name": "Bibliothek", "operator_type": "oeffentlich", "street": "Teststr. 1",
             "contact_email": "raum@example.org", "consent": "on",
             "rooms-TOTAL_FORMS": "1", "rooms-INITIAL_FORMS": "0", "rooms-MIN_NUM_FORMS": "1", "rooms-MAX_NUM_FORMS": "1000",
             "rooms-0-name": "Lesesaal", "rooms-0-cost": "0", "rooms-0-rhythm": "beides",
@@ -221,3 +223,208 @@ class ImportTests(TestCase):
         self.assertEqual(venue.district, "kalk")
         self.assertEqual(venue.contact_phone, "")
         self.assertTrue(venue.step_free)
+
+
+def make_private(name="Wohnzimmer Müller", quarter="Ehrenfeld", capacity=30, **kwargs):
+    venue = make_venue(
+        name, visibility=Venue.Visibility.ON_REQUEST, public_title="Großes Wohnzimmer", operator_type="privat",
+        quarter=quarter, street="Geheimweg 7", manager_email="gast@example.org", contact_email="gast@example.org", **kwargs,
+    )
+    Room.objects.create(venue=venue, name="Wohnzimmer", capacity=capacity, cost=Room.Cost.FREE)
+    return venue
+
+
+@override_settings(SITE_URL="http://testserver")
+class PrivateListingTests(TestCase):
+    def setUp(self):
+        self.venue = make_private()
+        self.user = make_group_user()
+        self.client.force_login(self.user)
+
+    def request_data(self, **extra):
+        data = {"occasion": "Hauskonzert", "dates": "Sa 14.3., 19 Uhr", "persons": "20", "message": "Wir sind ein Chor.",
+                "reply_email": "chor@example.org", "privacy": "on"}
+        data.update(extra)
+        return data
+
+    def test_details_hidden_until_accepted(self):
+        page = self.client.get(reverse("venues:search")).content.decode()
+        self.assertIn("Großes Wohnzimmer", page)
+        self.assertNotIn("Wohnzimmer Müller", page)
+        self.assertNotIn("Geheimweg", page)
+        detail = self.client.get(reverse("venues:detail", args=[self.venue.pk])).content.decode()
+        self.assertNotIn("Geheimweg", detail)
+        self.assertNotIn("gast@example.org", detail)
+
+    def test_search_does_not_leak_name(self):
+        response = self.client.get(reverse("venues:search"), {"q": "Müller"})
+        self.assertEqual(response.context["total"], 0)
+        self.assertEqual(self.client.get(reverse("venues:search"), {"q": "Wohnzimmer"}).context["total"], 1)
+
+    def test_request_accept_grants_access(self):
+        self.client.post(reverse("venues:detail", args=[self.venue.pk]), self.request_data())
+        req = UsageRequest.objects.get()
+        self.assertEqual(mail.outbox[-1].to, ["gast@example.org"])
+        self.assertNotIn("Geheimweg", self.client.get(reverse("venues:detail", args=[self.venue.pk])).content.decode())
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.assertContains(self.client.get(path), "Hauskonzert")
+        self.client.post(path, {"action": "accept", "note": "Gern!"})
+        req.refresh_from_db()
+        self.assertEqual(req.status, UsageRequest.Status.ACCEPTED)
+        self.assertEqual(mail.outbox[-1].to, ["chor@example.org"])
+        self.assertContains(self.client.get(reverse("venues:detail", args=[self.venue.pk])), "Geheimweg")
+        self.assertEqual(self.client.get(path).status_code, 404, "Link ist nach der Antwort verbraucht")
+
+    def test_decline_keeps_details_hidden(self):
+        self.client.post(reverse("venues:detail", args=[self.venue.pk]), self.request_data())
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.client.post(path, {"action": "decline"})
+        self.assertNotIn("Geheimweg", self.client.get(reverse("venues:detail", args=[self.venue.pk])).content.decode())
+
+    def test_batch_request_goes_to_matching_quarter_only(self):
+        other = make_private("Atelier Schmitz", capacity=40)
+        make_private("Keller Kalk", quarter="Kalk")
+        make_private("Zu klein", capacity=5)
+        query = "quarter=Ehrenfeld&capacity=20"
+        response = self.client.post(f"{reverse('venues:batch_request')}?{query}", self.request_data())
+        self.assertRedirects(response, reverse("venues:my_requests"))
+        targets = set(UsageRequest.objects.values_list("venue__name", flat=True))
+        self.assertEqual(targets, {"Wohnzimmer Müller", "Atelier Schmitz"})
+        self.assertEqual(len({r.batch for r in UsageRequest.objects.all()}), 1)
+        self.assertEqual(len({r.token_hash for r in UsageRequest.objects.all()}), 2)
+        self.assertEqual(sorted(m.to[0] for m in mail.outbox), ["gast@example.org", "gast@example.org"])
+        self.assertTrue(other.usage_requests.exists())
+
+    def test_batch_requires_location(self):
+        response = self.client.get(reverse("venues:batch_request"), {"capacity": "10"})
+        self.assertEqual(response.status_code, 302)
+
+    @override_settings(MAX_BATCH_TARGETS=2)
+    def test_batch_is_capped(self):
+        for i in range(4):
+            make_private(f"Raum {i}")
+        self.client.post(f"{reverse('venues:batch_request')}?quarter=Ehrenfeld", self.request_data())
+        self.assertEqual(UsageRequest.objects.count(), 2)
+
+    def test_hidden_venue_not_on_map(self):
+        Venue.objects.filter(pk=self.venue.pk).update(latitude=50.95, longitude=6.92)
+        response = self.client.get(reverse("venues:search"))
+        self.assertEqual(response.context["map_points"], [])
+
+    def test_expired_request_notifies_group(self):
+        self.client.post(reverse("venues:detail", args=[self.venue.pk]), self.request_data())
+        UsageRequest.objects.update(expires_at=timezone.now() - timedelta(days=1))
+        call_command("datenschutz_bereinigen", stdout=open("/dev/null", "w"))
+        self.assertEqual(UsageRequest.objects.get().status, UsageRequest.Status.EXPIRED)
+        self.assertEqual(mail.outbox[-1].to, ["chor@example.org"])
+
+
+@override_settings(SITE_URL="http://testserver", FRESHNESS_INTERVAL_DAYS=180, FRESHNESS_REMINDER_DAYS=21, FRESHNESS_PAUSE_DAYS=42)
+class FreshnessTests(TestCase):
+    def test_check_reminder_pause_cycle(self):
+        old = timezone.now() - timedelta(days=200)
+        venue = make_venue(manager_email="haus@example.org", last_confirmed_at=old)
+        now = timezone.now()
+        self.assertEqual(run_freshness_checks(now)["abfragen"], 1)
+        self.assertIn("noch aktuell", mail.outbox[-1].subject)
+        self.assertEqual(run_freshness_checks(now)["abfragen"], 0, "nicht doppelt fragen")
+        self.assertEqual(run_freshness_checks(now + timedelta(days=22))["erinnerungen"], 1)
+        self.assertEqual(run_freshness_checks(now + timedelta(days=23))["erinnerungen"], 0)
+        self.assertEqual(run_freshness_checks(now + timedelta(days=43))["pausiert"], 1)
+        venue.refresh_from_db()
+        self.assertEqual(venue.status, Venue.Status.PAUSED)
+        # Ein Klick macht den Eintrag wieder sichtbar
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.client.post(path, {"action": "still_current"})
+        venue.refresh_from_db()
+        self.assertEqual(venue.status, Venue.Status.LISTED)
+        self.assertIsNone(venue.freshness_check_sent_at)
+
+    def test_confirmation_resets_cycle(self):
+        venue = make_venue(manager_email="haus@example.org", last_confirmed_at=timezone.now() - timedelta(days=200))
+        run_freshness_checks()
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.client.post(path, {"action": "still_current"})
+        self.assertEqual(run_freshness_checks(timezone.now() + timedelta(days=50)), {"abfragen": 0, "erinnerungen": 0, "pausiert": 0})
+        venue.refresh_from_db()
+        self.assertEqual(venue.status, Venue.Status.LISTED)
+
+    def test_public_source_not_asked(self):
+        make_venue(status=Venue.Status.PUBLIC_SOURCE, manager_email="x@example.org", consent_at=None,
+                   operator_type="oeffentlich", source_reference="https://example.org", last_confirmed_at=None)
+        Venue.objects.update(created_at=timezone.now() - timedelta(days=400))
+        self.assertEqual(run_freshness_checks()["abfragen"], 0)
+
+
+class PublicSourceTests(TestCase):
+    def test_visible_with_badge(self):
+        venue = make_venue("Bürgerhaus X", status=Venue.Status.PUBLIC_SOURCE, consent_at=None, operator_type="oeffentlich",
+                           source_reference="https://www.stadt-koeln.de/x")
+        self.client.force_login(make_group_user())
+        self.assertContains(self.client.get(reverse("venues:search")), "Noch nicht vom Ort bestätigt")
+        self.assertContains(self.client.get(reverse("venues:detail", args=[venue.pk])), "https://www.stadt-koeln.de/x")
+
+    def test_private_cannot_be_public_source(self):
+        from django.core.exceptions import ValidationError
+
+        venue = Venue(name="Privat", status=Venue.Status.PUBLIC_SOURCE, operator_type="privat", source_reference="x")
+        with self.assertRaises(ValidationError):
+            venue.clean()
+
+    def test_import_real_data_file(self):
+        call_command("orte_importieren", "data/orte_koeln.json", stdout=open("/dev/null", "w"))
+        self.assertGreaterEqual(Venue.objects.listed().count(), 15)
+        self.assertTrue(Venue.objects.filter(status=Venue.Status.RESEARCHED).exists())
+        kalk = Venue.objects.get(name="Bürgerhaus Kalk")
+        self.assertEqual(kalk.district, "kalk")
+        self.assertEqual(kalk.rooms.count(), 2)
+        call_command("orte_importieren", "data/orte_koeln.json", stdout=open("/dev/null", "w"))
+        self.assertEqual(Venue.objects.filter(name="Bürgerhaus Kalk").count(), 1)
+
+    @override_settings(SITE_URL="http://testserver")
+    def test_consent_turns_public_source_into_listed(self):
+        venue = make_venue("Bürgerhaus Y", status=Venue.Status.PUBLIC_SOURCE, consent_at=None, operator_type="oeffentlich",
+                           source_reference="https://example.org")
+        send_listing_request(venue)
+        venue.refresh_from_db()
+        self.assertEqual(venue.status, Venue.Status.PUBLIC_SOURCE, "bleibt während der Anfrage sichtbar")
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        data = {
+            "action": "save", "visibility": "oeffentlich", "name": "Bürgerhaus Y", "operator_type": "oeffentlich",
+            "street": "Teststr. 1", "contact_email": "raum@example.org", "consent": "on",
+            "rooms-TOTAL_FORMS": "1", "rooms-INITIAL_FORMS": "0", "rooms-MIN_NUM_FORMS": "1", "rooms-MAX_NUM_FORMS": "1000",
+            "rooms-0-name": "Saal", "rooms-0-cost": "2", "rooms-0-rhythm": "beides",
+        }
+        self.client.post(path, data)
+        venue.refresh_from_db()
+        self.assertEqual(venue.status, Venue.Status.LISTED)
+
+
+class AccessibilityTests(TestCase):
+    """Grundlegende Prüfungen: Sprache, Überschrift, Beschriftungen, Sprunglink."""
+
+    PUBLIC_PAGES = ["pages:home", "pages:help", "pages:help_groups", "pages:help_providers", "pages:faq", "pages:easy",
+                    "pages:accessibility", "pages:privacy", "pages:imprint", "pages:terms", "venues:submit",
+                    "accounts:register", "accounts:login"]
+
+    def test_pages_have_structure(self):
+        import re as _re
+
+        for name in self.PUBLIC_PAGES:
+            html = self.client.get(reverse(name)).content.decode()
+            self.assertIn('<html lang="de">', html, name)
+            self.assertEqual(len(_re.findall(r"<h1[ >]", html)), 1, f"{name}: genau eine h1")
+            self.assertIn('href="#inhalt"', html, name)
+            for field_id in _re.findall(r'<(?:input(?![^>]*type="hidden")|select|textarea)[^>]*\sid="([^"]+)"', html):
+                if "website_url" in field_id or "__prefix__" in field_id:
+                    continue
+                self.assertTrue(
+                    f'for="{field_id}"' in html or "aria-label=" in html.split(f'id="{field_id}"')[0][-300:],
+                    f"{name}: Feld {field_id} ohne Beschriftung",
+                )
+
+    def test_error_summary_links_to_fields(self):
+        html = self.client.post(reverse("accounts:register"), {"email": "", "name": ""}).content.decode()
+        self.assertIn('id="fehler"', html)
+        self.assertIn('href="#id_email"', html)
+        self.assertIn('aria-invalid="true"', html)

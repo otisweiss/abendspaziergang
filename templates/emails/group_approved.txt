@@ -1,0 +1,11 @@
+Hallo,
+
+{{ OPERATOR_NAME }} hat eure Gruppe „{{ group.name }}“ freigeschaltet.
+Ihr könnt jetzt Räume suchen und anfragen:
+
+{{ SITE_URL }}/konto/anmelden/
+
+So geht es los: {{ SITE_URL }}/hilfe/gruppen/
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}

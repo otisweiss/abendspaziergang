@@ -1,0 +1,1 @@
+Anfrage für euren Raum: {{ req.occasion|truncatechars:60 }}

@@ -1,0 +1,18 @@
+Hallo,
+
+gute Nachricht: Der Raumgeber hat eurer Anfrage zugesagt.
+Anfrage: {{ req.occasion }} ({{ req.dates }})
+{% if req.response_note %}
+Nachricht vom Raumgeber:
+„{{ req.response_note }}“
+{% endif %}
+Name, Adresse und Kontakt seht ihr hier (nach der Anmeldung):
+
+{{ url }}
+
+Bitte meldet euch beim Raumgeber und sprecht alles Weitere ab.
+Mit der Zusage ist noch nichts gebucht.
+Bitte gebt die Adresse nicht weiter.
+
+Viele Grüße
+{{ SITE_NAME }}

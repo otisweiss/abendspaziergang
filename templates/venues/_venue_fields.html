@@ -1,4 +1,15 @@
-{% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+<fieldset class="card">
+  <legend>Wer soll den Ort sehen?</legend>
+  {% include "_field.html" with field=form.visibility %}
+  <details class="explain">
+    <summary>Was ist der Unterschied?</summary>
+    <p><strong>Öffentlich gelistet:</strong> Geprüfte Gruppen sehen Name, Adresse und euren Kontakt. Sie fragen direkt bei euch an.</p>
+    <p><strong>Nicht öffentlich:</strong> Gut für private Räume, zum Beispiel ein Wohnzimmer für Hauskonzerte. Gruppen sehen nur den Stadtteil,
+      die Größe, die Ausstattung und wofür der Raum passt. Sie schicken euch eine Anfrage über uns. Ihr bekommt sie per E-Mail und sagt zu oder ab.
+      Erst nach eurer Zusage sieht diese eine Gruppe Name, Adresse und Kontakt.</p>
+  </details>
+  {% include "_field.html" with field=form.public_title %}
+</fieldset>
 <fieldset class="card">
   <legend>Der Ort</legend>
   <div class="grid-2">
@@ -12,7 +23,7 @@
   {% include "_field.html" with field=form.description %}
 </fieldset>
 <fieldset class="card">
-  <legend>Lage</legend>
+  <legend>Wo ist der Ort?</legend>
   <div class="grid-3">
     {% include "_field.html" with field=form.street %}
     {% include "_field.html" with field=form.postcode %}
@@ -26,14 +37,24 @@
 </fieldset>
 <fieldset class="card">
   <legend>Barrierefreiheit</legend>
-  {% include "_field.html" with field=form.step_free %}
-  {% include "_field.html" with field=form.accessible_wc %}
-  {% include "_field.html" with field=form.hearing_loop %}
+  <p class="help">Diese Angaben helfen Menschen mit Rollstuhl, Rollator, Kinderwagen oder Hörbehinderung. Bitte nur ankreuzen, was wirklich zutrifft.</p>
+  <div class="grid-2">
+    <div>
+      {% include "_field.html" with field=form.step_free %}
+      {% include "_field.html" with field=form.elevator %}
+      {% include "_field.html" with field=form.accessible_wc %}
+    </div>
+    <div>
+      {% include "_field.html" with field=form.hearing_loop %}
+      {% include "_field.html" with field=form.disabled_parking %}
+    </div>
+  </div>
   {% include "_field.html" with field=form.accessibility_notes %}
 </fieldset>
 <fieldset class="card">
   <legend>So können Gruppen anfragen</legend>
-  <p class="help">Nur freigeschaltete Gruppen sehen diese Angaben. Bitte nutze möglichst Funktionsadressen statt persönlicher Kontaktdaten.</p>
+  <p class="help">Nur geprüfte Gruppen sehen diese Angaben. Bei nicht öffentlichen Orten sieht sie nur eine Gruppe, der ihr zugesagt habt.
+    Bitte nutzt möglichst eine allgemeine Adresse wie raum@… statt einer privaten.</p>
   <div class="grid-3">
     {% include "_field.html" with field=form.contact_email %}
     {% include "_field.html" with field=form.contact_phone %}
@@ -42,8 +63,8 @@
   {% include "_field.html" with field=form.contact_notes %}
 </fieldset>
 <h2>Räume</h2>
+<p class="help">Tragt jeden Raum einzeln ein, zum Beispiel „Großer Saal“ und „Gruppenraum“.</p>
 {{ formset.management_form }}
-{% for error in formset.non_form_errors %}<p class="error">{{ error }}</p>{% endfor %}
 <div id="room-list">
   {% for rform in formset %}{% include "venues/_room_form.html" with rform=rform num=forloop.counter %}{% endfor %}
 </div>

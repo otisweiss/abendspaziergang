@@ -48,7 +48,19 @@ class Purpose(models.Model):
 
 class VenueQuerySet(models.QuerySet):
     def listed(self):
+        """Für Gruppen sichtbare Orte: bestätigt oder aus öffentlicher Quelle."""
+        return self.filter(status__in=Venue.VISIBLE_STATUSES)
+
+    def confirmed(self):
         return self.filter(status=Venue.Status.LISTED)
+
+    def accessible_ids(self, user):
+        """IDs nicht öffentlicher Orte, deren Details diese Gruppe sehen darf (Anfrage bestätigt)."""
+        if not user.is_authenticated:
+            return set()
+        return set(
+            UsageRequest.objects.filter(user=user, status=UsageRequest.Status.ACCEPTED).values_list("venue_id", flat=True)
+        )
 
 
 class Venue(models.Model):
@@ -57,7 +69,8 @@ class Venue(models.Model):
         REQUESTED = "angefragt", "Listung angefragt"
         UNCONFIRMED = "unbestaetigt", "Gemeldet, E-Mail unbestätigt"
         REVIEW = "pruefung", "Zugestimmt, in redaktioneller Prüfung"
-        LISTED = "gelistet", "Gelistet (sichtbar)"
+        PUBLIC_SOURCE = "quelle", "Aus öffentlicher Quelle (sichtbar, vom Ort noch nicht bestätigt)"
+        LISTED = "gelistet", "Gelistet (sichtbar, vom Ort bestätigt)"
         PAUSED = "pausiert", "Pausiert"
         REJECTED = "abgelehnt", "Abgelehnt / nicht anfragen"
 
@@ -69,6 +82,10 @@ class Venue(models.Model):
         BUSINESS = "unternehmen", "Unternehmen"
         PRIVATE = "privat", "Privat"
 
+    class Visibility(models.TextChoices):
+        PUBLIC = "oeffentlich", "Öffentlich gelistet: Gruppen sehen Name, Adresse und Kontakt"
+        ON_REQUEST = "auf_anfrage", "Nicht öffentlich: Gruppen sehen nur Stadtteil und Raum, Details erst nach meiner Zusage"
+
     class Source(models.TextChoices):
         RESEARCH = "recherche", "Handrecherche"
         OSM = "osm", "OpenStreetMap-Import"
@@ -76,10 +93,24 @@ class Venue(models.Model):
         FORM = "formular", "Meldeformular"
 
     # Stammdaten
+    visibility = models.CharField(
+        "Sichtbarkeit", max_length=20, choices=Visibility.choices, default=Visibility.PUBLIC
+    )
+    public_title = models.CharField(
+        "Titel für die nicht öffentliche Anzeige",
+        max_length=120,
+        blank=True,
+        help_text="Ohne Namen und Adresse, z. B. „Großes Wohnzimmer mit Flügel“. Nur bei nicht öffentlichen Orten.",
+    )
     name = models.CharField("Name des Ortes", max_length=200)
     operator = models.CharField("Träger / Betreiber", max_length=200, blank=True)
     operator_type = models.CharField("Art des Trägers", max_length=20, choices=OperatorType.choices, blank=True)
-    description = models.TextField("Beschreibung", blank=True, max_length=3000)
+    description = models.TextField(
+        "Beschreibung",
+        blank=True,
+        max_length=3000,
+        help_text="Bei nicht öffentlichen Orten bitte ohne Namen, Adresse oder Telefonnummer.",
+    )
     website = models.URLField("Webseite", blank=True)
 
     # Lage
@@ -89,12 +120,14 @@ class Venue(models.Model):
     district = models.CharField("Stadtbezirk", max_length=20, choices=DISTRICTS, blank=True)
     latitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
     longitude = models.DecimalField(max_digits=9, decimal_places=6, null=True, blank=True)
-    transit = models.CharField("ÖPNV-Anbindung", max_length=200, blank=True)
+    transit = models.CharField("Mit Bus und Bahn", max_length=200, blank=True, help_text="z. B. „Haltestelle Körnerstraße: Linien 3 und 4“")
 
     # Barrierefreiheit (für den ganzen Ort)
     step_free = models.BooleanField("Stufenlos erreichbar", default=False)
     accessible_wc = models.BooleanField("Barrierefreies WC", default=False)
     hearing_loop = models.BooleanField("Induktionsschleife / Hörhilfe", default=False)
+    elevator = models.BooleanField("Aufzug vorhanden (falls Räume nicht im Erdgeschoss)", default=False)
+    disabled_parking = models.BooleanField("Behindertenparkplatz in der Nähe", default=False)
     accessibility_notes = models.CharField("Hinweise zur Barrierefreiheit", max_length=300, blank=True)
 
     # Kontaktweg für Gruppen (nur für freigeschaltete Gruppen sichtbar)
@@ -128,11 +161,16 @@ class Venue(models.Model):
     edit_token_expires_at = models.DateTimeField(null=True, blank=True, editable=False)
     listing_request_count = models.PositiveSmallIntegerField("Anzahl Listungsanfragen", default=0)
     last_confirmed_at = models.DateTimeField("Zuletzt vom Raumgeber bestätigt", null=True, blank=True)
+    freshness_check_sent_at = models.DateTimeField("Aktualitätsabfrage gesendet am", null=True, blank=True)
+    freshness_reminder_sent_at = models.DateTimeField("Erinnerung zur Aktualität gesendet am", null=True, blank=True)
+    paused_reason = models.CharField("Grund für die Pause", max_length=200, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     objects = VenueQuerySet.as_manager()
+
+    VISIBLE_STATUSES = ("gelistet", "quelle")
 
     class Meta:
         ordering = ["name"]
@@ -152,7 +190,38 @@ class Venue(models.Model):
 
     @property
     def is_visible(self):
-        return self.status == self.Status.LISTED
+        return self.status in self.VISIBLE_STATUSES
+
+    @property
+    def is_unconfirmed_source(self):
+        return self.status == self.Status.PUBLIC_SOURCE
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.status == self.Status.PUBLIC_SOURCE:
+            # Ohne Zustimmung dürfen nur institutionelle, öffentlich angebotene Orte sichtbar sein.
+            if self.visibility != self.Visibility.PUBLIC or self.operator_type in ("", self.OperatorType.PRIVATE):
+                raise ValidationError(
+                    "„Aus öffentlicher Quelle“ ist nur für öffentliche Einrichtungen, Kirchen, Vereine oder Unternehmen "
+                    "erlaubt, die selbst öffentlich Räume anbieten. Bitte Trägerart setzen."
+                )
+            if not self.source_reference:
+                raise ValidationError("Bitte die öffentliche Quelle angeben (URL).")
+
+    @property
+    def is_public(self):
+        return self.visibility == self.Visibility.PUBLIC
+
+    @property
+    def display_title(self):
+        """Name für Gruppen ohne Zugriff auf Details."""
+        if self.is_public:
+            return self.name
+        return self.public_title or f"Nicht öffentlicher Raum in {self.quarter or 'Köln'}"
+
+    def needs_freshness_check_since(self):
+        return self.last_confirmed_at or self.consent_at or self.created_at
 
     @property
     def has_location(self):
@@ -191,10 +260,12 @@ class Venue(models.Model):
         self.bookmarks.all().delete()
         for field in [
             "description", "website", "transit", "accessibility_notes", "contact_email", "contact_phone",
-            "contact_url", "contact_notes", "manager_email", "consent_text", "edit_token_hash",
+            "contact_url", "contact_notes", "manager_email", "consent_text", "edit_token_hash", "public_title",
+            "paused_reason",
         ]:
             setattr(self, field, "")
-        self.step_free = self.accessible_wc = self.hearing_loop = False
+        self.step_free = self.accessible_wc = self.hearing_loop = self.elevator = self.disabled_parking = False
+        self.usage_requests.all().delete()
         self.consent_at = None
         self.edit_token_expires_at = None
         self.status = self.Status.REJECTED
@@ -207,6 +278,7 @@ class Room(models.Model):
         DONATION = 1, "Gegen Spende"
         REDUCED = 2, "Ermäßigt für Gemeinnützige"
         PAID = 3, "Kostenpflichtig"
+        ON_REQUEST = 4, "Kosten auf Anfrage"
 
     class Rhythm(models.TextChoices):
         BOTH = "beides", "Einmalig und regelmäßig"
@@ -309,3 +381,60 @@ class Bookmark(models.Model):
         constraints = [models.UniqueConstraint(fields=["user", "venue"], name="unique_bookmark")]
         verbose_name = "Merklisten-Eintrag"
         verbose_name_plural = "Merkliste"
+
+
+class UsageRequest(models.Model):
+    """Nutzungsanfrage einer Gruppe an einen nicht öffentlichen Ort.
+
+    Der Raumgeber bekommt die Anfrage per E-Mail und sagt zu oder ab. Erst nach der Zusage
+    sieht die Gruppe Name, Adresse und Kontakt des Ortes. Die E-Mail-Adresse des Raumgebers
+    bleibt bis dahin verborgen.
+    """
+
+    class Status(models.TextChoices):
+        OPEN = "offen", "Wartet auf Antwort"
+        ACCEPTED = "zugesagt", "Zugesagt"
+        DECLINED = "abgesagt", "Abgesagt"
+        EXPIRED = "abgelaufen", "Ohne Antwort abgelaufen"
+        WITHDRAWN = "zurueckgezogen", "Von der Gruppe zurückgezogen"
+
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="usage_requests")
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="usage_requests")
+    room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Raum")
+    occasion = models.CharField("Wofür braucht ihr den Raum?", max_length=200)
+    dates = models.CharField("Wann?", max_length=200, help_text="z. B. „Samstag, 14. März, 19–22 Uhr“ oder „jeden Dienstagabend“")
+    persons = models.PositiveIntegerField("Wie viele Personen?")
+    message = models.TextField(
+        "Nachricht an den Raumgeber",
+        max_length=1500,
+        blank=True,
+        help_text="Stellt euch kurz vor. Bitte keine Daten anderer Personen.",
+    )
+    reply_email = models.EmailField("Antwort an diese E-Mail-Adresse")
+    batch = models.CharField("Sammelanfrage", max_length=32, blank=True, db_index=True, editable=False)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN, db_index=True)
+    response_note = models.CharField("Antwort des Raumgebers", max_length=500, blank=True)
+    token_hash = models.CharField(max_length=64, db_index=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    answered_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Nutzungsanfrage"
+        verbose_name_plural = "Nutzungsanfragen"
+
+    def __str__(self):
+        return f"Anfrage an {self.venue.display_title} ({self.get_status_display()})"
+
+    def issue_token(self):
+        token = secrets.token_urlsafe(32)
+        self.token_hash = hash_token(token)
+        return token
+
+    def respond_url(self, token):
+        return settings.SITE_URL + reverse("venues:respond", args=[token])
+
+    @classmethod
+    def from_token(cls, token):
+        return cls.objects.filter(token_hash=hash_token(token)).select_related("venue", "user").first() if token else None

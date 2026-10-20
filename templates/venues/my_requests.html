@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Meine Anfragen{% endblock %}
+{% block content %}
+<h1>Meine Anfragen</h1>
+<p class="help">Hier seht ihr eure Anfragen an nicht öffentliche Orte. Bei einer Zusage seht ihr alle Angaben zum Ort.</p>
+{% if items %}
+<div class="table-scroll">
+<table class="data-table">
+  <caption class="sr">Liste eurer Anfragen</caption>
+  <thead><tr><th scope="col">Ort</th><th scope="col">Wofür und wann</th><th scope="col">Gesendet</th><th scope="col">Status</th><th scope="col"><span class="sr">Aktion</span></th></tr></thead>
+  <tbody>
+  {% for item in items %}
+    <tr>
+      <td data-label="Ort">{% if item.status == "zugesagt" %}<a href="{{ item.venue.get_absolute_url }}">{{ item.venue.name }}</a>{% else %}<a href="{{ item.venue.get_absolute_url }}">{{ item.venue.display_title }}</a>{% endif %}
+        {% if item.batch %}<br><span class="help">Sammelanfrage</span>{% endif %}</td>
+      <td data-label="Wofür und wann">{{ item.occasion }}<br><span class="help">{{ item.dates }} · {{ item.persons }} Personen</span></td>
+      <td data-label="Gesendet">{{ item.created_at|date:"d.m.Y" }}</td>
+      <td data-label="Status"><span class="badge badge-req-{{ item.status }}">{{ item.get_status_display }}</span>
+        {% if item.response_note %}<br><span class="help">„{{ item.response_note }}“</span>{% endif %}</td>
+      <td data-label="Aktion">{% if item.status == "offen" %}
+        <form method="post" action="{% url 'venues:withdraw_request' item.pk %}">{% csrf_token %}<button class="linklike" type="submit">Zurückziehen</button></form>
+      {% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+  <p>Ihr habt noch keine Anfragen gestellt. Nicht öffentliche Orte findet ihr in der <a href="{% url 'venues:search' %}?visibility=auf_anfrage">Suche</a>.</p>
+{% endif %}
+{% endblock %}

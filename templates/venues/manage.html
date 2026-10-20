@@ -2,29 +2,59 @@
 {% block title %}Eintrag verwalten{% endblock %}
 {% block content %}
 <h1>Eintrag verwalten: {{ venue.name }}</h1>
-<p class="status-line">Status: <span class="badge badge-{{ venue.status }}">{{ venue.get_status_display }}</span></p>
+<p class="status-line">Status: <span class="badge badge-{{ venue.status }}">{{ venue.get_status_display }}</span>
+  · {% if venue.is_public %}öffentlich gelistet{% else %}nicht öffentlich{% endif %}</p>
 
 {% if venue.status == "unbestaetigt" %}
   <div class="panel panel-accent">
-    <p>Bitte bestätige deine E-Mail-Adresse, damit wir deinen Eintrag prüfen können.</p>
+    <p>Bitte bestätige deine E-Mail-Adresse. Danach prüfen wir den Eintrag.</p>
     <form method="post">{% csrf_token %}<button class="btn" name="action" value="confirm_email">E-Mail bestätigen</button></form>
   </div>
 {% elif venue.status == "angefragt" %}
   <div class="panel panel-accent">
-    <p><strong>Hallo!</strong> Wir bauen eine nicht kommerzielle Übersicht über Räume, die Kölner Vereine, Chöre und Initiativen nutzen können.
-    Diesen Ort haben wir aus öffentlich zugänglichen Angaben vorgemerkt. <strong>Er ist bisher nirgends sichtbar.</strong></p>
-    <p>Wenn du einverstanden bist, ergänze oder korrigiere die Angaben unten und stimme der Veröffentlichung zu.
-    Wenn nicht, klicke ganz unten auf „Nicht aufnehmen“. Dann fragen wir nicht noch einmal an.</p>
+    <p><strong>Hallo!</strong> Wir sammeln Räume, die Kölner Vereine, Chöre und Initiativen nutzen können.
+      Euren Ort haben wir in öffentlichen Angaben gefunden, zum Beispiel auf eurer Webseite.</p>
+    <p><strong>Euer Ort ist bisher nirgends zu sehen.</strong> Das ändert sich nur, wenn ihr unten zustimmt.</p>
+    <ul>
+      <li>Ihr wollt mitmachen? Dann prüft und ergänzt die Angaben und stimmt unten zu.</li>
+      <li>Ihr wollt nur bestimmten Gruppen zusagen? Wählt „Nicht öffentlich“.</li>
+      <li>Ihr wollt nicht mitmachen? Klickt ganz unten auf „Nicht aufnehmen“. Wir fragen dann nicht noch einmal.</li>
+    </ul>
+  </div>
+{% elif venue.status == "quelle" %}
+  <div class="panel panel-accent">
+    <p><strong>Hallo!</strong> {{ SITE_NAME }} zeigt Kölner Vereinen, Chören und Initiativen, wo sie Räume finden.
+      Euren Ort zeigen wir schon, weil ihr selbst öffentlich Räume anbietet. Er trägt den Hinweis „Noch nicht vom Ort bestätigt“.</p>
+    <ul>
+      <li>Bitte prüft und ergänzt die Angaben und stimmt unten zu. Dann entfällt der Hinweis.</li>
+      <li>Ihr wollt nicht gezeigt werden? Klickt ganz unten auf „Nicht aufnehmen“. Wir entfernen den Eintrag sofort.</li>
+    </ul>
   </div>
 {% elif venue.status == "pruefung" %}
-  <div class="panel"><p>Danke! Wir prüfen den Eintrag und schalten ihn in Kürze frei. Du kannst ihn weiter bearbeiten.</p></div>
+  <div class="panel"><p>Danke! Wir prüfen den Eintrag und schalten ihn bald frei. Bis dahin könnt ihr ihn weiter bearbeiten.</p></div>
 {% endif %}
 
-<p class="help">Diese Seite ist über deinen persönlichen Link erreichbar. Bitte gib den Link nicht weiter.
-  Einen neuen Link kannst du jederzeit <a href="{% url 'venues:request_link' %}">anfordern</a> – der alte wird dann ungültig.</p>
+{% if venue.status == "gelistet" or venue.status == "pausiert" %}
+  <section class="panel panel-accent" aria-labelledby="aktuell">
+    <h2 id="aktuell">Stimmen die Angaben noch?</h2>
+    {% if venue.paused_reason %}<p><strong>Der Eintrag ist pausiert:</strong> {{ venue.paused_reason }}. Ein Klick genügt, dann ist er wieder sichtbar.</p>{% endif %}
+    <p>Wir fragen etwa alle sechs Monate nach, damit Gruppen nur aktuelle Angebote finden.
+      {% if venue.last_confirmed_at %}Zuletzt bestätigt am {{ venue.last_confirmed_at|date:"d.m.Y" }}.{% endif %}</p>
+    <form method="post">{% csrf_token %}<button class="btn btn-large" name="action" value="still_current">Ja, alles ist noch aktuell</button></form>
+    <p class="help">Etwas hat sich geändert? Dann ändert die Angaben unten und speichert.</p>
+  </section>
+{% endif %}
+
+{% if open_usage_requests %}
+  <p class="msg msg-warning">Es warten {{ open_usage_requests }} Nutzungsanfrage{{ open_usage_requests|pluralize:"n" }} auf eure Antwort. Die Links dazu stehen in den E-Mails, die wir euch geschickt haben.</p>
+{% endif %}
+
+<p class="help">Diese Seite öffnet ihr mit eurem persönlichen Link. Bitte gebt ihn nicht weiter.
+  Ihr könnt jederzeit einen <a href="{% url 'venues:request_link' %}">neuen Link anfordern</a>. Der alte gilt dann nicht mehr.</p>
 
 <form method="post" novalidate>
   {% csrf_token %}
+  {% include "_form_errors.html" with extra_form=consent_form %}
   {% include "venues/_venue_fields.html" %}
   {% if needs_consent %}
     <fieldset class="card">
@@ -36,17 +66,17 @@
   <button class="btn btn-large" type="submit" name="action" value="save">{% if needs_consent %}Speichern und zustimmen{% else %}Änderungen speichern{% endif %}</button>
 </form>
 
-<section class="card danger-zone">
-  <h2>Sichtbarkeit</h2>
+<section class="card danger-zone" aria-labelledby="sichtbar">
+  <h2 id="sichtbar">Sichtbarkeit</h2>
   {% if venue.status == "gelistet" %}
     <form method="post">{% csrf_token %}<button class="btn btn-secondary" name="action" value="pause">Eintrag pausieren</button>
-      <span class="help">Gerade keine Kapazitäten? Der Eintrag wird ausgeblendet, bleibt aber gespeichert.</span></form>
+      <p class="help">Gerade keine Zeit oder kein Platz? Wir blenden den Eintrag aus. Die Angaben bleiben gespeichert.</p></form>
   {% elif venue.status == "pausiert" %}
     <form method="post">{% csrf_token %}<button class="btn" name="action" value="resume">Wieder sichtbar machen</button></form>
   {% endif %}
   <form method="post" class="mt">{% csrf_token %}
-    <button class="btn btn-danger" name="action" value="remove">{% if venue.status == "angefragt" %}Nicht aufnehmen{% else %}Eintrag entfernen{% endif %}</button>
-    <span class="help">Wir löschen alle Angaben. Nur Name und Adresse bleiben als Sperrvermerk, damit wir nicht erneut anfragen.</span>
+    <button class="btn btn-danger" name="action" value="remove">{% if venue.status == "angefragt" or venue.status == "quelle" %}Nicht aufnehmen{% else %}Eintrag entfernen{% endif %}</button>
+    <p class="help">Wir löschen alle Angaben. Nur Name und Adresse bleiben gespeichert. So fragen wir nicht noch einmal an.</p>
   </form>
 </section>
 {% endblock %}

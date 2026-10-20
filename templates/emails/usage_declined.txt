@@ -1,0 +1,14 @@
+Hallo,
+
+leider passt es diesmal nicht.
+Ein Raumgeber hat eure Anfrage abgesagt.
+Anfrage: {{ req.occasion }} ({{ req.dates }})
+{% if req.response_note %}
+Nachricht vom Raumgeber:
+„{{ req.response_note }}“
+{% endif %}
+In der Suche findet ihr weitere Räume:
+{{ SITE_URL }}/suche/
+
+Viele Grüße
+{{ SITE_NAME }}

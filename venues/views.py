@@ -7,15 +7,24 @@ from django.db import transaction
 from django.db.models import Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
-from .forms import ConsentForm, RequestLinkForm, RoomFormSet, SearchForm, SubmissionForm, VenueForm
+from django.conf import settings
+
+from .forms import (
+    BatchRequestForm, ConsentForm, RequestLinkForm, RespondForm, RoomFormSet, SearchForm, SubmissionForm, UsageRequestForm, VenueForm,
+)
 from .koeln import ALL_QUARTERS, DISTRICTS
-from .models import Bookmark, ListingRequest, Venue
+from .models import Bookmark, ListingRequest, UsageRequest, Venue
 from .ratelimit import is_limited
 from .search import search_venues
-from .services import close_open_requests, send_new_edit_link, send_submission_confirmation
+from .services import (
+    answer_usage_request, close_open_requests, confirm_still_current, create_batch_request, create_usage_request,
+    notify_moderation,
+    send_new_edit_link, send_submission_confirmation,
+)
 
 
 def group_required(view):
@@ -41,6 +50,7 @@ def home(request):
     districts = [(label, by_district.get(key, 0)) for key, label in DISTRICTS]
     context = {
         "listed_count": listed.count(),
+        "confirmed_count": Venue.objects.confirmed().count(),
         "collected_count": Venue.objects.exclude(status=Venue.Status.REJECTED).count(),
         "districts": districts,
     }
@@ -54,16 +64,21 @@ def home(request):
 def search(request):
     form = SearchForm(request.GET or None)
     data = form.cleaned_data if form.is_valid() else {}
-    results = search_venues(data)
+    accessible = Venue.objects.accessible_ids(request.user)
+    results = search_venues(data, accessible)
     page = Paginator(results, 20).get_page(request.GET.get("seite"))
     query = request.GET.copy()
     query.pop("seite", None)
     map_points = [
         {"lat": float(v.latitude), "lon": float(v.longitude), "name": v.name, "url": v.get_absolute_url()}
         for v in page
-        if v.has_location
+        # Nicht öffentliche Orte erscheinen nicht auf der Karte, bis die Gruppe Zugang hat.
+        if v.has_location and (v.is_public or v.pk in accessible)
     ]
     bookmarked = set(request.user.bookmarks.values_list("venue_id", flat=True))
+    batch_count = 0
+    if data.get("district") or data.get("quarter"):
+        batch_count = min(batch_targets(request.user, data, accessible).count(), settings.MAX_BATCH_TARGETS)
     return render(
         request,
         "venues/search.html",
@@ -74,6 +89,9 @@ def search(request):
             "querystring": query.urlencode(),
             "map_points": map_points,
             "bookmarked": bookmarked,
+            "accessible": accessible,
+            "batch_count": batch_count,
+            "location_chosen": bool(data.get("district") or data.get("quarter")),
         },
     )
 
@@ -83,18 +101,109 @@ def detail(request, pk):
     venue = get_object_or_404(Venue.objects.prefetch_related("rooms__equipment", "rooms__purposes", "rooms__slots"), pk=pk)
     if not venue.is_visible and not request.user.is_staff:
         raise Http404
+    has_access = venue.is_public or request.user.is_staff or pk in Venue.objects.accessible_ids(request.user)
+    own_requests = venue.usage_requests.filter(user=request.user) if not venue.is_public else UsageRequest.objects.none()
+    open_request = own_requests.filter(status=UsageRequest.Status.OPEN).first()
+
+    request_form = None
+    if not has_access and open_request is None:
+        initial = {"reply_email": request.user.email}
+        request_form = UsageRequestForm(request.POST or None, venue=venue, initial=initial)
+        if request.method == "POST":
+            if is_limited(request, f"usage:{request.user.pk}", limit=settings.MAX_USAGE_REQUESTS_PER_DAY, window_seconds=86400):
+                messages.error(request, "Ihr habt heute schon viele Anfragen geschickt. Bitte versucht es morgen wieder.")
+            elif request_form.is_valid():
+                create_usage_request(request_form, venue, request.user)
+                messages.success(request, "Eure Anfrage ist verschickt. Ihr bekommt eine E-Mail, sobald der Raumgeber antwortet.")
+                return redirect("venues:detail", pk=pk)
+
     map_points = []
-    if venue.has_location:
+    if venue.has_location and has_access:
         map_points = [{"lat": float(venue.latitude), "lon": float(venue.longitude), "name": venue.name, "url": ""}]
     return render(
         request,
         "venues/detail.html",
         {
             "venue": venue,
+            "has_access": has_access,
+            "open_request": open_request,
+            "last_request": own_requests.first(),
+            "request_form": request_form,
             "map_points": map_points,
             "is_bookmarked": request.user.bookmarks.filter(venue=venue).exists(),
         },
     )
+
+
+def batch_targets(user, data, accessible):
+    """Nicht öffentliche Orte, die zur Suche passen und noch nicht angefragt sind."""
+    data = {**data, "visibility": Venue.Visibility.ON_REQUEST}
+    already = UsageRequest.objects.filter(user=user, status=UsageRequest.Status.OPEN).values_list("venue_id", flat=True)
+    return (
+        search_venues(data, accessible)
+        .exclude(pk__in=accessible)
+        .exclude(pk__in=already)
+        .exclude(manager_email="")
+    )
+
+
+@group_required
+def batch_request(request):
+    """Sammelanfrage: an alle passenden nicht öffentlichen Orte in einem Stadtteil oder Bezirk."""
+    search_form = SearchForm(request.GET or None)
+    data = search_form.cleaned_data if search_form.is_valid() else {}
+    if not (data.get("district") or data.get("quarter")):
+        messages.error(request, "Bitte wählt zuerst einen Stadtbezirk oder Stadtteil aus. Dann können wir passende Orte anfragen.")
+        return redirect(f"{reverse('venues:search')}?{request.GET.urlencode()}")
+    accessible = Venue.objects.accessible_ids(request.user)
+    targets = list(batch_targets(request.user, data, accessible)[: settings.MAX_BATCH_TARGETS])
+    form = BatchRequestForm(request.POST or None, initial={"reply_email": request.user.email})
+    if request.method == "POST" and targets:
+        if is_limited(request, f"usage:{request.user.pk}", limit=settings.MAX_USAGE_REQUESTS_PER_DAY, window_seconds=86400):
+            messages.error(request, "Ihr habt heute schon viele Anfragen geschickt. Bitte versucht es morgen wieder.")
+        elif form.is_valid():
+            _, created = create_batch_request(form, targets, request.user)
+            messages.success(
+                request,
+                f"Eure Anfrage ging an {len(created)} passende Orte. Ihr bekommt eine E-Mail, sobald jemand antwortet.",
+            )
+            return redirect("venues:my_requests")
+    return render(
+        request,
+        "venues/batch_request.html",
+        {"form": form, "targets": targets, "search_form": search_form, "querystring": request.GET.urlencode(),
+         "max_targets": settings.MAX_BATCH_TARGETS},
+    )
+
+
+@group_required
+def my_requests(request):
+    items = request.user.usage_requests.select_related("venue", "room")
+    return render(request, "venues/my_requests.html", {"items": items})
+
+
+@require_POST
+@group_required
+def withdraw_request(request, pk):
+    item = get_object_or_404(UsageRequest, pk=pk, user=request.user, status=UsageRequest.Status.OPEN)
+    item.status = UsageRequest.Status.WITHDRAWN
+    item.token_hash = ""
+    item.save(update_fields=["status", "token_hash"])
+    messages.success(request, "Die Anfrage ist zurückgezogen.")
+    return redirect("venues:my_requests")
+
+
+def respond(request, token):
+    """Raumgeber sagt einer Nutzungsanfrage zu oder ab (Link aus der E-Mail, kein Konto nötig)."""
+    item = UsageRequest.from_token(token)
+    if item is None or item.status != UsageRequest.Status.OPEN or item.expires_at < timezone.now():
+        return render(request, "venues/respond_invalid.html", status=404)
+    form = RespondForm(request.POST or None)
+    action = request.POST.get("action")
+    if request.method == "POST" and action in ("accept", "decline") and form.is_valid():
+        answer_usage_request(item, accept=action == "accept", note=form.cleaned_data["note"])
+        return render(request, "venues/respond_done.html", {"accepted": action == "accept", "item": item})
+    return render(request, "venues/respond.html", {"item": item, "form": form, "group": getattr(item.user, "group_profile", None)})
 
 
 @require_POST
@@ -112,7 +221,7 @@ def toggle_bookmark(request, pk):
 
 @group_required
 def bookmarks(request):
-    items = request.user.bookmarks.filter(venue__status=Venue.Status.LISTED).select_related("venue")
+    items = request.user.bookmarks.filter(venue__status__in=Venue.VISIBLE_STATUSES).select_related("venue")
     return render(request, "venues/bookmarks.html", {"items": items})
 
 
@@ -153,7 +262,17 @@ def manage(request, token):
         venue.edit_token_expires_at = None
         venue.last_confirmed_at = timezone.now()
         venue.save()
+        notify_moderation("Neuer Ort zur Prüfung", f"Ein Ort wurde gemeldet und bestätigt: {venue.name}")
         messages.success(request, "Danke! Deine E-Mail-Adresse ist bestätigt. Wir prüfen den Eintrag und melden uns.")
+        return redirect("venues:manage", token=token)
+
+    if action == "still_current" and venue.status in (Venue.Status.LISTED, Venue.Status.PAUSED):
+        was_paused_for_silence = venue.status == Venue.Status.PAUSED and venue.paused_reason
+        if was_paused_for_silence:
+            venue.status = Venue.Status.LISTED
+            venue.save(update_fields=["status", "updated_at"])
+        confirm_still_current(venue)
+        messages.success(request, "Danke! Wir haben vermerkt, dass das Angebot noch aktuell ist.")
         return redirect("venues:manage", token=token)
 
     if action == "pause" and venue.status == Venue.Status.LISTED:
@@ -164,8 +283,8 @@ def manage(request, token):
 
     if action == "resume" and venue.status == Venue.Status.PAUSED:
         venue.status = Venue.Status.LISTED
-        venue.last_confirmed_at = timezone.now()
-        venue.save()
+        venue.save(update_fields=["status", "updated_at"])
+        confirm_still_current(venue)
         messages.success(request, "Der Eintrag ist wieder sichtbar.")
         return redirect("venues:manage", token=token)
 
@@ -187,13 +306,20 @@ def manage(request, token):
                 if needs_consent:
                     venue.consent_at = now
                     venue.consent_text = consent_form.fields["consent"].label
-                if venue.status in (Venue.Status.RESEARCHED, Venue.Status.REQUESTED, Venue.Status.UNCONFIRMED):
+                if venue.status == Venue.Status.PUBLIC_SOURCE:
+                    # War schon sichtbar und geprüft; mit Zustimmung jetzt bestätigt.
+                    venue.status = Venue.Status.LISTED
+                    venue.edit_token_expires_at = None
+                elif venue.status in (Venue.Status.RESEARCHED, Venue.Status.REQUESTED, Venue.Status.UNCONFIRMED):
                     venue.status = Venue.Status.REVIEW
                     # Nach der Zustimmung bleibt der Link dauerhaft gültig (bis ein neuer angefordert wird).
                     venue.edit_token_expires_at = None
                 venue.last_confirmed_at = now
+                venue.freshness_check_sent_at = venue.freshness_reminder_sent_at = None
                 venue.save()
                 formset.save()
+                if venue.listing_requests.filter(outcome=ListingRequest.Outcome.OPEN).exists():
+                    notify_moderation("Ort hat der Listung zugestimmt", f"Zustimmung erhalten: {venue.name}")
                 close_open_requests(venue, ListingRequest.Outcome.ACCEPTED)
             messages.success(request, "Gespeichert. Vielen Dank!")
             return redirect("venues:manage", token=token)
@@ -208,6 +334,7 @@ def manage(request, token):
             "formset": formset,
             "consent_form": consent_form,
             "needs_consent": needs_consent,
+            "open_usage_requests": venue.usage_requests.filter(status=UsageRequest.Status.OPEN).count(),
             "quarters": ALL_QUARTERS,
         },
     )
@@ -221,7 +348,10 @@ def request_link(request):
         elif form.is_valid():
             venues = Venue.objects.filter(
                 manager_email__iexact=form.cleaned_data["email"],
-                status__in=[Venue.Status.REQUESTED, Venue.Status.REVIEW, Venue.Status.LISTED, Venue.Status.PAUSED],
+                status__in=[
+                    Venue.Status.REQUESTED, Venue.Status.REVIEW, Venue.Status.LISTED, Venue.Status.PAUSED,
+                    Venue.Status.PUBLIC_SOURCE,
+                ],
             )
             for venue in venues:
                 send_new_edit_link(venue)

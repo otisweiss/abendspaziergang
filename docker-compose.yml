@@ -20,7 +20,7 @@ services:
     depends_on:
       - db
 
-  # Löschfristen täglich um 3:30 Uhr umsetzen
+  # Täglich um 3:30 Uhr: Löschfristen umsetzen und Aktualität der Einträge abfragen
   cron:
     build: .
     restart: unless-stopped
@@ -36,6 +36,7 @@ services:
           now=$$(date +%s); next=$$(date -d "tomorrow 03:30" +%s 2>/dev/null || echo $$((now+86400)))
           sleep $$((next-now))
           python manage.py datenschutz_bereinigen
+          python manage.py aktualitaet_pruefen
         done
 
   caddy:

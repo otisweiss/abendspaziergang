@@ -8,6 +8,8 @@ def site(request):
         group = getattr(user, "group_profile", None)
     return {
         "SITE_NAME": settings.SITE_NAME,
+        "OPERATOR_NAME": settings.OPERATOR_NAME,
+        "GROUP_MANUAL_APPROVAL": settings.GROUP_MANUAL_APPROVAL,
         "MAP_TILE_URL": settings.MAP_TILE_URL,
         "MAP_ATTRIBUTION": settings.MAP_ATTRIBUTION,
         "current_group": group,

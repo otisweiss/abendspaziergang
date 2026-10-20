@@ -2,38 +2,56 @@
 {% block title %}Räume finden{% endblock %}
 {% block content %}
 <h1>Räume finden</h1>
+<p class="help">Wählt aus, was ihr braucht. Ihr müsst nicht alle Felder ausfüllen. <a href="{% url 'pages:help_groups' %}">So funktioniert die Suche</a></p>
 <div class="search-layout">
-  <form method="get" class="filters card" aria-label="Filter">
-    {% include "_field.html" with field=form.q %}
-    {% include "_field.html" with field=form.purpose %}
-    {% include "_field.html" with field=form.district %}
-    <div class="grid-2">
-      {% include "_field.html" with field=form.capacity %}
-      {% include "_field.html" with field=form.max_cost %}
-    </div>
-    <div class="grid-2">
-      {% include "_field.html" with field=form.day %}
-      {% include "_field.html" with field=form.period %}
-    </div>
-    {% include "_field.html" with field=form.operator_type %}
-    {% include "_field.html" with field=form.step_free %}
-    <details{% if form.equipment.value %} open{% endif %}>
-      <summary>Ausstattung</summary>
-      {% include "_field.html" with field=form.equipment %}
-    </details>
-    <div class="filter-actions">
-      <button class="btn" type="submit">Filtern</button>
-      <a href="{% url 'venues:search' %}">Zurücksetzen</a>
-    </div>
-  </form>
-  <section class="results" aria-live="polite">
-    <p class="result-count"><strong>{{ total }}</strong> Ort{{ total|pluralize:"e" }} gefunden</p>
+  <details class="filter-box card" id="filter-box"{% if not request.GET %} {% endif %}>
+    <summary class="filter-toggle">Filter {% if request.GET %}(aktiv){% endif %}</summary>
+    <form method="get" class="filters" aria-label="Filter">
+      {% include "_field.html" with field=form.q %}
+      {% include "_field.html" with field=form.purpose %}
+      {% include "_field.html" with field=form.district %}
+      {% include "_field.html" with field=form.quarter %}
+      <div class="grid-2">
+        {% include "_field.html" with field=form.capacity %}
+        {% include "_field.html" with field=form.max_cost %}
+      </div>
+      <div class="grid-2">
+        {% include "_field.html" with field=form.day %}
+        {% include "_field.html" with field=form.period %}
+      </div>
+      {% include "_field.html" with field=form.operator_type %}
+      {% include "_field.html" with field=form.visibility %}
+      {% include "_field.html" with field=form.step_free %}
+      {% include "_field.html" with field=form.accessible_wc %}
+      <details{% if form.equipment.value %} open{% endif %}>
+        <summary>Ausstattung</summary>
+        {% include "_field.html" with field=form.equipment %}
+      </details>
+      <div class="filter-actions">
+        <button class="btn" type="submit">Orte anzeigen</button>
+        <a href="{% url 'venues:search' %}">Alle Filter löschen</a>
+      </div>
+    </form>
+  </details>
+  <section class="results" aria-labelledby="ergebnis">
+    <h2 id="ergebnis" class="result-count" aria-live="polite"><strong>{{ total }}</strong> Ort{{ total|pluralize:"e" }} gefunden</h2>
+
+    {% if batch_count %}
+      <div class="panel panel-accent batch-cta">
+        <p><strong>{{ batch_count }} nicht öffentliche{{ batch_count|pluralize:"r,"}} Ort{{ batch_count|pluralize:"e" }}</strong> pass{{ batch_count|pluralize:"t,en" }} zu eurer Suche.
+          Das sind oft private Räume. Ihr könnt alle auf einmal anfragen. Name und Adresse seht ihr erst, wenn jemand zusagt.</p>
+        <a class="btn" href="{% url 'venues:batch_request' %}?{{ querystring }}">Alle passenden Orte anfragen</a>
+      </div>
+    {% elif not location_chosen %}
+      <p class="help">Tipp: Wählt einen Stadtbezirk oder Stadtteil. Dann könnt ihr auch alle passenden nicht öffentlichen Orte auf einmal anfragen.</p>
+    {% endif %}
+
     {% include "_map.html" %}
     {% for venue in page %}
       {% include "venues/_venue_card.html" %}
     {% empty %}
-      <div class="panel"><p>Keine passenden Orte. Probier es mit weniger Filtern.</p>
-      <p>Du kennst einen Ort, der fehlt? <a href="{% url 'venues:submit' %}">Hier melden</a> oder den Raumgeber darauf hinweisen.</p></div>
+      <div class="panel"><p>Wir haben keine passenden Orte gefunden. Versucht es mit weniger Filtern.</p>
+      <p>Ihr kennt einen Ort, der fehlt? <a href="{% url 'venues:submit' %}">Hier melden</a> oder den Ort auf {{ SITE_NAME }} hinweisen.</p></div>
     {% endfor %}
     {% if page.has_other_pages %}
     <nav class="pagination" aria-label="Seiten">

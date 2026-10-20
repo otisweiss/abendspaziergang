@@ -4,6 +4,7 @@
 <h1>Bearbeitungslink anfordern</h1>
 <p>Gib die E-Mail-Adresse ein, mit der dein Eintrag verwaltet wird. Wenn es dazu einen Eintrag gibt, schicken wir dir einen neuen Link.</p>
 <form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% include "_form_errors.html" %}
   {% include "_honeypot.html" %}
   {% include "_field.html" with field=form.email %}
   <button class="btn" type="submit">Link schicken</button>

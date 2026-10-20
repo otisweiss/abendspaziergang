@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Einfache Sprache{% endblock %}
+{% block content %}
+<article class="prose easy">
+<h1>{{ SITE_NAME }} in Einfacher Sprache</h1>
+
+<h2>Was ist {{ SITE_NAME }}?</h2>
+<p>{{ SITE_NAME }} ist eine Internet-Seite.<br>
+Auf der Seite stehen Räume in Köln.<br>
+Gruppen können diese Räume nutzen.<br>
+Zum Beispiel ein Chor, ein Verein oder eine Selbst-Hilfe-Gruppe.</p>
+
+<h2>Wofür sind die Räume?</h2>
+<p>Die Räume sind für Treffen von Gruppen.<br>
+Zum Beispiel für:</p>
+<ul>
+  <li>eine Chor-Probe</li>
+  <li>einen Stamm-Tisch</li>
+  <li>einen Info-Abend</li>
+  <li>ein Fest von einem Verein</li>
+</ul>
+<p>Die Räume sind <strong>nicht</strong> für private Feiern.<br>
+Zum Beispiel nicht für einen Geburtstag oder eine Hochzeit.</p>
+
+<h2>Was kostet das?</h2>
+<p>Die Internet-Seite kostet nichts.<br>
+Manche Räume sind kostenlos.<br>
+Für manche Räume muss man bezahlen.<br>
+Das steht bei jedem Raum.</p>
+
+<h2>Wie finde ich einen Raum?</h2>
+<ol class="steps">
+  <li>Sie melden Ihre Gruppe an. Das heißt: registrieren.</li>
+  <li>Sie bekommen eine E-Mail. Sie klicken auf den Link in der E-Mail.</li>
+  <li>Wir prüfen Ihre Gruppe. Danach bekommen Sie wieder eine E-Mail.</li>
+  <li>Jetzt können Sie Räume suchen.</li>
+  <li>Sie fragen beim Raum nach, ob Sie ihn nutzen dürfen.</li>
+</ol>
+<p><a class="btn" href="{% url 'accounts:register' %}">Gruppe anmelden</a></p>
+
+<h2>Ich habe einen Raum. Wie kann ich ihn anbieten?</h2>
+<ol class="steps">
+  <li>Sie füllen ein Formular aus. Sie brauchen dafür kein Konto.</li>
+  <li>Sie bekommen eine E-Mail. Sie klicken auf den Link in der E-Mail.</li>
+  <li>Wir prüfen den Raum. Dann können Gruppen ihn sehen.</li>
+</ol>
+<p>Sie können auch sagen: Nicht alle sollen meine Adresse sehen.<br>
+Dann sehen Gruppen nur den Stadt-Teil.<br>
+Gruppen schicken Ihnen eine Anfrage.<br>
+Sie entscheiden: Ja oder Nein.<br>
+Nur bei Ja bekommt die Gruppe Ihre Adresse.</p>
+<p><a class="btn" href="{% url 'venues:submit' %}">Raum anbieten</a></p>
+
+<h2>Bekomme ich E-Mails?</h2>
+<p>Ja, manchmal.<br>
+Ungefähr alle 6 Monate fragen wir:<br>
+Gibt es Ihren Raum noch?<br>
+Dann klicken Sie auf einen Knopf.<br>
+Das dauert nur 1 Minute.</p>
+
+<h2>Was passiert mit meinen Daten?</h2>
+<p>Wir speichern nur, was wir wirklich brauchen.<br>
+Wir geben Ihre Daten nicht an andere Firmen.<br>
+Wir zeigen keine Werbung.<br>
+Sie können Ihre Daten jederzeit löschen.</p>
+
+<h2>Ich habe eine Frage.</h2>
+<p>Schreiben Sie uns eine E-Mail.<br>
+Die Adresse steht im <a href="{% url 'pages:imprint' %}">Impressum</a>.</p>
+</article>
+{% endblock %}

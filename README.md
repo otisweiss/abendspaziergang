@@ -4,11 +4,25 @@ Eine nicht kommerzielle, datensparsame Datenbank aller Orte in Köln, die Räume
 Chöre, Initiativen und andere Gruppen anbieten. Sie ist nach Zweck, Ausstattung, Zeiten,
 Größe, Kosten, Bezirk und Barrierefreiheit filterbar. *(Arbeitstitel)*
 
+Betrieben von einem Verein, der alle Gruppen vor der Freischaltung prüft.
+
 - 📄 [Konzept und Recherche zu bestehenden Lösungen](docs/KONZEPT.md)
 - 🔒 [Datenschutzkonzept (VVT, TOM, Löschfristen)](docs/DATENSCHUTZ.md)
-- ⚖️ [Betrieb als Privatperson – was gilt?](docs/BETRIEB-ALS-PRIVATPERSON.md)
+- 🧭 [Anleitung für das Redaktionsteam](docs/ANLEITUNG-REDAKTION.md)
+- ⚖️ [Rechtliches zum Betrieb (Privatperson oder Verein)](docs/BETRIEB-ALS-PRIVATPERSON.md)
 
 ## Funktionen
+
+- **Echter Startbestand:** 25 Kölner Orte aus öffentlichen Quellen (`data/orte_koeln.json`),
+  davon 18 sofort sichtbar mit dem Hinweis „Noch nicht vom Ort bestätigt“ (alle Bürgerhäuser
+  und Bürgerzentren der Stadt Köln u. a.), 7 intern zum Anfragen.
+- **Nicht öffentliche Listung:** z. B. für private Räume oder Wohnzimmerkonzerte. Gruppen sehen
+  nur Stadtteil und Raumangaben und fragen einzeln oder per **Sammelanfrage** an alle passenden
+  Orte eines Stadtteils. Der Raumgeber sagt per Mail zu oder ab. Erst dann sieht die Gruppe
+  Name, Adresse und Kontakt.
+- **Aktualitätsabfrage:** automatische Mail alle 6 Monate, Erinnerung, Pause ohne Antwort.
+- **Barrierefrei, Einfache Sprache, responsiv:** WCAG 2.1 AA als Ziel, Fehlerübersicht,
+  Tastaturbedienung, eigene Seite in Einfacher Sprache, Anleitungen, FAQ, mobil zuerst.
 
 - **Sammeln:** OSM-Import (`import_osm`) und CSV-Import (`import_csv`). Gesammelte Orte
   bleiben intern, bis der Raumgeber zustimmt.
@@ -31,7 +45,8 @@ pip install -r requirements.txt
 export DJANGO_DEBUG=1            # E-Mails erscheinen dann in der Konsole
 python manage.py migrate
 python manage.py createcachetable
-python manage.py demo_daten      # erfundene Beispielorte + Login demo@example.org / demo-passwort-2026
+python manage.py orte_importieren data/orte_koeln.json   # echte Kölner Orte
+python manage.py demo_daten      # Demo-Konto demo@example.org / demo-passwort-2026 + 2 fiktive private Räume
 python manage.py createsuperuser # Zugang zur Redaktion unter /verwaltung/
 python manage.py runserver
 ```
@@ -56,7 +71,9 @@ Caddy holt automatisch ein TLS-Zertifikat, sobald die Domain auf den Server zeig
 |---|---|
 | `import_osm [--file x.json] [--dry-run]` | Kandidaten aus OpenStreetMap (Bürgerzentren, Bibliotheken, Kulturzentren, Vereinsheime …) |
 | `import_csv datei.csv` | Handrecherche importieren, Vorlage: `docs/vorlage-recherche.csv` |
+| `orte_importieren datei.json` | Orte mit Räumen importieren (Status „quelle“ oder „recherchiert“) |
 | `datenschutz_bereinigen [--dry-run]` | Löschfristen umsetzen (täglich) |
+| `aktualitaet_pruefen` | Aktualitätsabfragen, Erinnerungen, Pausen (täglich) |
 | `demo_daten` | Beispieldaten für Test und Vorschau |
 
 ## Technik

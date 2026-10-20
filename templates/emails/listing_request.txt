@@ -5,9 +5,12 @@ Kölner Vereine, Chöre, Initiativen und Selbsthilfegruppen für Treffen, Proben
 Stammtische oder Infoabende nutzen können. Viele Gruppen suchen solche Räume und
 wissen nicht, wo sie fragen können.
 
-Wir haben „{{ venue.name }}“ aus öffentlich zugänglichen Angaben vorgemerkt
+{% if venue.status == "quelle" %}Sie bieten selbst öffentlich Räume an. Deshalb zeigen wir „{{ venue.name }}“ bereits
+mit den Angaben aus dieser Quelle: {{ venue.source_reference }}
+Der Eintrag trägt den Hinweis „Noch nicht vom Ort bestätigt“. Bitte prüfen Sie die Angaben.
+Wenn Sie nicht gezeigt werden möchten, entfernen wir den Eintrag sofort.{% else %}Wir haben „{{ venue.name }}“ aus öffentlich zugänglichen Angaben vorgemerkt
 ({{ venue.source_reference|default:"z. B. Ihre Webseite oder OpenStreetMap" }}).
-Der Eintrag ist bisher NICHT sichtbar und wird es nur mit Ihrer Zustimmung.
+Der Eintrag ist bisher NICHT sichtbar und wird es nur mit Ihrer Zustimmung.{% endif %}
 
 Über diesen persönlichen Link können Sie die Angaben prüfen, ergänzen und der
 Aufnahme zustimmen – oder mit einem Klick ablehnen:

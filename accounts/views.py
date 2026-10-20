@@ -15,7 +15,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 
 from venues.ratelimit import is_limited
-from venues.services import send_templated_mail
+from venues.services import notify_moderation, send_templated_mail
 
 from .forms import DeleteAccountForm, EmailAuthenticationForm, GroupProfileForm, RegistrationForm
 from .models import GroupProfile, User
@@ -59,7 +59,14 @@ def verify(request, uidb64, token):
     if not settings.GROUP_MANUAL_APPROVAL and profile.status == GroupProfile.Status.PENDING:
         profile.status = GroupProfile.Status.APPROVED
         profile.save(update_fields=["status"])
-    messages.success(request, "Dein Konto ist bestätigt. Du kannst dich jetzt anmelden.")
+        messages.success(request, "Dein Konto ist bestätigt. Du kannst dich jetzt anmelden.")
+    else:
+        notify_moderation("Neue Gruppe wartet auf Freischaltung", f"Neue Registrierung: {profile.name}")
+        messages.success(
+            request,
+            f"Deine E-Mail-Adresse ist bestätigt. {settings.OPERATOR_NAME} prüft jetzt eure Angaben. "
+            "Wir schreiben dir, sobald ihr suchen könnt.",
+        )
     return redirect("accounts:login")
 
 

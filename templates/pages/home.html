@@ -3,9 +3,10 @@
 {% block content %}
 <section class="hero">
   <h1>Räume für Vereine, Chöre und Initiativen in Köln</h1>
-  <p class="lead">Viele Räume in Köln stehen oft leer, obwohl Gruppen genau so etwas suchen: für die Chorprobe, den Stammtisch,
-    den Infoabend oder das Vereinstreffen. {{ SITE_NAME }} bringt beide Seiten zusammen – von kostenlos bis kostenpflichtig,
-    vom Hinterzimmer bis zum Saal.</p>
+  <p class="lead">In Köln gibt es viele Räume, die Gruppen nutzen können. Aber oft weiß niemand davon.
+    {{ SITE_NAME }} zeigt euch diese Räume: für die Chorprobe, den Stammtisch, den Infoabend oder das Vereinstreffen.
+    Vom Wohnzimmer bis zum Saal, kostenlos oder gegen Miete.</p>
+  <p><a href="{% url 'pages:easy' %}">Diese Seite in Einfacher Sprache</a></p>
   <div class="hero-actions">
     {% if can_search %}
       <a class="btn btn-large" href="{% url 'venues:search' %}">Räume finden</a>
@@ -17,29 +18,31 @@
 </section>
 
 <section class="stats" aria-label="Zahlen">
-  <div class="stat"><span class="stat-value">{{ listed_count }}</span><span class="stat-label">Orte gelistet</span></div>
-  <div class="stat"><span class="stat-value">{{ collected_count }}</span><span class="stat-label">Orte gesammelt und angefragt</span></div>
-  <div class="stat"><span class="stat-value">9</span><span class="stat-label">Stadtbezirke</span></div>
+  <div class="stat"><span class="stat-value">{{ listed_count }}</span><span class="stat-label">Orte sichtbar</span></div>
+  <div class="stat"><span class="stat-value">{{ confirmed_count }}</span><span class="stat-label">davon vom Ort bestätigt</span></div>
+  <div class="stat"><span class="stat-value">{{ collected_count }}</span><span class="stat-label">Orte insgesamt gesammelt</span></div>
 </section>
 
 <section class="two-col">
   <div class="card">
     <h2>Für Gruppen</h2>
     <ol>
-      <li>Kostenlos registrieren (E-Mail, Name und Zweck der Gruppe – kein Klarname nötig).</li>
-      <li>Nach Stadtbezirk, Zweck, Größe, Kosten, Ausstattung und Wochentag filtern.</li>
-      <li>Direkt beim Ort anfragen. Wir vermitteln nur den Kontakt und verdienen nichts daran.</li>
+      <li>Registriert eure Gruppe. Das ist kostenlos. Euren eigenen Namen brauchen wir nicht.</li>
+      <li>{{ OPERATOR_NAME }} prüft eure Angaben und schaltet euch frei.</li>
+      <li>Sucht nach Stadtteil, Zweck, Größe, Kosten, Ausstattung und Wochentag.</li>
+      <li>Fragt direkt beim Ort an. Private Räume fragt ihr über uns an.</li>
     </ol>
     <p class="help">Für rein private Feiern wie Geburtstage oder Hochzeiten ist {{ SITE_NAME }} nicht gedacht.</p>
   </div>
   <div class="card">
     <h2>Für Raumgeber</h2>
     <ol>
-      <li>Ort und Räume in wenigen Minuten eintragen – ohne Konto.</li>
-      <li>Selbst festlegen: Kosten, Zeiten, Zwecke und wie Gruppen anfragen.</li>
-      <li>Über den persönlichen Link jederzeit ändern, pausieren oder löschen.</li>
+      <li>Tragt euren Raum ein. Ihr braucht dafür kein Konto.</li>
+      <li>Ihr legt fest: Kosten, Zeiten, Zwecke und wer eure Adresse sieht.</li>
+      <li>Private Räume bleiben verborgen. Ihr sagt jeder Anfrage selbst zu oder ab.</li>
+      <li>Über euren Link ändert, pausiert oder löscht ihr den Eintrag jederzeit.</li>
     </ol>
-    <p class="help">Bürgerzentren, Pfarrsäle, Vereinsheime, Kneipen-Hinterzimmer, Büros am Abend – alles willkommen.</p>
+    <p class="help">Willkommen sind Bürgerzentren, Pfarrsäle, Vereinsheime, Nebenräume in Kneipen, Büros am Abend und Wohnzimmer.</p>
   </div>
 </section>
 
@@ -48,6 +51,11 @@
   <ul class="district-list">
     {% for label, n in districts %}<li><span>{{ label }}</span><strong>{{ n }}</strong></li>{% endfor %}
   </ul>
+</section>
+
+<section class="card">
+  <h2>Fragen?</h2>
+  <p>In den <a href="{% url 'pages:help' %}">Anleitungen</a> erklären wir alles Schritt für Schritt. Antworten auf typische Fragen findet ihr unter <a href="{% url 'pages:faq' %}">Häufige Fragen</a>.</p>
 </section>
 
 <section class="card privacy-teaser">

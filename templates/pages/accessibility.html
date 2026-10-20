@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Barrierefreiheit{% endblock %}
+{% block content %}
+<article class="prose">
+<h1>Erklärung zur Barrierefreiheit</h1>
+<p class="lead">Wir möchten, dass alle Menschen {{ SITE_NAME }} gut nutzen können. Unser Ziel sind die Anforderungen der WCAG 2.1, Stufe AA,
+  und der Barrierefreie-Informationstechnik-Verordnung (BITV 2.0).</p>
+
+<h2>Was wir tun</h2>
+<ul>
+  <li>Alle Seiten lassen sich nur mit der Tastatur bedienen. Der Fokus ist immer gut sichtbar.</li>
+  <li>Ein Link „Zum Inhalt springen“ steht ganz oben auf jeder Seite.</li>
+  <li>Alle Formularfelder haben eine Beschriftung. Pflichtfelder sind mit „(Pflicht)“ markiert, nicht nur mit Farbe.</li>
+  <li>Bei Fehlern zeigen wir oben eine Liste. Jeder Eintrag springt zum passenden Feld.</li>
+  <li>Texte und Hintergrund haben genug Kontrast, im hellen und im dunklen Modus.</li>
+  <li>Die Seite funktioniert auf dem Handy, auf dem Tablet und am Computer. Ihr könnt die Schrift bis 200 % vergrößern.</li>
+  <li>Es gibt keine blinkenden oder sich bewegenden Inhalte.</li>
+  <li>Die Karte ist freiwillig. Alle Informationen stehen auch als Text in der Liste.</li>
+  <li>Wichtige Inhalte gibt es auch in <a href="{% url 'pages:easy' %}">Einfacher Sprache</a>.</li>
+  <li>Bei jedem Raum stehen Angaben zur Barrierefreiheit: stufenlos, Aufzug, WC, Hörhilfe und Parkplatz.</li>
+</ul>
+
+<h2>Was noch nicht barrierefrei ist</h2>
+<ul>
+  <li>Die Karte (OpenStreetMap) ist mit Screenreadern nur eingeschränkt nutzbar. Bitte nutzt die Liste.</li>
+  <li>Angaben zur Barrierefreiheit der Räume kommen von den Raumgebern. Wir können sie nicht vor Ort prüfen.</li>
+  <li>Die Verwaltungsoberfläche für das Redaktionsteam ist noch nicht vollständig geprüft.</li>
+</ul>
+
+<h2>Stand dieser Erklärung</h2>
+<p>Diese Erklärung haben wir selbst erstellt. Ein externer Test steht noch aus. Stand: {% now "F Y" %}.</p>
+
+<h2>Barriere gefunden? Sagt uns Bescheid</h2>
+<p>Schreibt uns, wenn etwas nicht funktioniert. Wir antworten innerhalb von 2 Wochen.
+  Die Kontaktadresse steht im <a href="{% url 'pages:imprint' %}">Impressum</a>.</p>
+<p>Ihr seid mit unserer Antwort nicht zufrieden? Dann könnt ihr euch an die Ombudsstelle für barrierefreie Informationstechnik des Landes Nordrhein-Westfalen wenden.</p>
+</article>
+{% endblock %}

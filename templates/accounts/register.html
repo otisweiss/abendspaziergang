@@ -5,6 +5,7 @@
 <p class="lead">Die Raumsuche ist für Vereine, Chöre, Initiativen und andere nicht kommerzielle Gruppen.
   Wir fragen nur, was wir wirklich brauchen. Einen Klarnamen brauchen wir nicht.</p>
 <form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% include "_form_errors.html" %}
   {% include "_honeypot.html" %}
   {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
   <fieldset class="card"><legend>Zugang</legend>

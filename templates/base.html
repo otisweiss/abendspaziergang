@@ -14,13 +14,18 @@
   <header class="site-header">
     <div class="wrap header-inner">
       <a class="brand" href="{% url 'pages:home' %}"><span class="brand-mark" aria-hidden="true">▣</span> {{ SITE_NAME }}</a>
+      <details class="menu" id="menu">
+      <summary class="menu-toggle"><span aria-hidden="true">☰</span> Menü</summary>
       <nav aria-label="Hauptnavigation">
+        {% with p=request.path %}
         <ul>
           {% if can_search %}
-            <li><a href="{% url 'venues:search' %}">Räume finden</a></li>
-            <li><a href="{% url 'venues:bookmarks' %}">Merkliste</a></li>
+            <li><a href="{% url 'venues:search' %}"{% if p == '/suche/' %} aria-current="page"{% endif %}>Räume finden</a></li>
+            <li><a href="{% url 'venues:my_requests' %}"{% if p == '/anfragen/' %} aria-current="page"{% endif %}>Meine Anfragen</a></li>
+            <li><a href="{% url 'venues:bookmarks' %}"{% if p == '/merkliste/' %} aria-current="page"{% endif %}>Merkliste</a></li>
           {% endif %}
-          <li><a href="{% url 'venues:submit' %}">Raum anbieten</a></li>
+          <li><a href="{% url 'venues:submit' %}"{% if p == '/ort-melden/' %} aria-current="page"{% endif %}>Raum anbieten</a></li>
+          <li><a href="{% url 'pages:help' %}"{% if '/hilfe/' in p %} aria-current="page"{% endif %}>Hilfe</a></li>
           {% if user.is_authenticated %}
             <li><a href="{% url 'accounts:account' %}">Konto</a></li>
             <li>
@@ -33,7 +38,9 @@
             <li><a class="btn btn-small" href="{% url 'accounts:register' %}">Registrieren</a></li>
           {% endif %}
         </ul>
+        {% endwith %}
       </nav>
+      </details>
     </div>
   </header>
   <main id="inhalt" class="wrap">
@@ -46,9 +53,13 @@
   </main>
   <footer class="site-footer">
     <div class="wrap footer-inner">
-      <p>{{ SITE_NAME }} – eine nicht kommerzielle Raumbörse für Gruppen und Vereine in Köln.</p>
+      <p>{{ SITE_NAME }} hilft Gruppen und Vereinen in Köln, Räume zu finden. Betrieben von {{ OPERATOR_NAME }}, ohne Geld zu verdienen.</p>
       <ul>
+        <li><a href="{% url 'pages:easy' %}">Einfache Sprache</a></li>
+        <li><a href="{% url 'pages:faq' %}">Häufige Fragen</a></li>
+        <li><a href="{% url 'pages:help' %}">Anleitungen</a></li>
         <li><a href="{% url 'pages:about' %}">Über das Projekt</a></li>
+        <li><a href="{% url 'pages:accessibility' %}">Barrierefreiheit</a></li>
         <li><a href="{% url 'pages:terms' %}">Nutzungsbedingungen</a></li>
         <li><a href="{% url 'pages:privacy' %}">Datenschutz</a></li>
         <li><a href="{% url 'pages:imprint' %}">Impressum</a></li>
@@ -56,6 +67,7 @@
       <p class="small">Keine Cookies außer den technisch notwendigen. Kein Tracking.</p>
     </div>
   </footer>
+  <script src="{% static 'js/a11y.js' %}"></script>
   {% block scripts %}{% endblock %}
 </body>
 </html>

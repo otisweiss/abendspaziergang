@@ -15,7 +15,7 @@
 </ul>
 
 <h2>1. Verantwortlich</h2>
-<p>[Name und Anschrift wie im <a href="{% url 'pages:imprint' %}">Impressum</a>], E-Mail: [datenschutz@…]</p>
+<p>{{ OPERATOR_NAME }}, Anschrift wie im <a href="{% url 'pages:imprint' %}">Impressum</a>, E-Mail: [datenschutz@…]</p>
 
 <h2>2. Aufruf der Webseite</h2>
 <p>Beim Aufruf verarbeitet unser Server technisch notwendige Daten (IP-Adresse, Zeitpunkt, aufgerufene Seite, Browserkennung).
@@ -49,6 +49,23 @@
   Diese Daten sind nicht öffentlich. Wir nutzen sie, um einmalig (höchstens mit einer Erinnerung) anzufragen, ob der Ort
   aufgenommen werden möchte. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist es, Gruppen und
   Räume zusammenzubringen. Du kannst jederzeit widersprechen (Art. 21 DSGVO), am einfachsten über „Nicht aufnehmen“ im Anfragelink.</p>
+
+<h2 id="quelle">6a. Orte aus öffentlichen Quellen</h2>
+<p>Einige Einrichtungen zeigen wir schon vor ihrer Zustimmung an. Das betrifft nur städtische Häuser, Kirchengemeinden, Vereine und Unternehmen,
+  die selbst öffentlich Räume anbieten. Wir übernehmen nur Angaben, die die Einrichtung selbst veröffentlicht hat: Name, Adresse, Webseite,
+  allgemeine Kontaktadresse und Angaben zu den Räumen. Namen von Mitarbeitenden übernehmen wir nicht. Solche Einträge tragen den Hinweis
+  „Noch nicht vom Ort bestätigt“ und nennen die Quelle. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Die Einrichtung kann jederzeit
+  widersprechen. Dann entfernen wir den Eintrag.</p>
+
+<h2 id="anfragen">6b. Nutzungsanfragen an nicht öffentliche Orte</h2>
+<p>Schickt eine Gruppe eine Anfrage an einen nicht öffentlichen Ort, verarbeiten wir: Gruppe, Anlass, Termin, Personenzahl, Nachricht und
+  Antwort-Adresse. Wir leiten diese Angaben per E-Mail an den Raumgeber weiter. Die Adresse des Raumgebers erfährt die Gruppe nur bei einer Zusage.
+  Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzungsvertrag) und die Einwilligung der Gruppe beim Absenden. Das Redaktionsteam sieht
+  die Nachrichten nicht. Wir löschen Anfragen nach 12 Monaten. Damit endet auch der Zugang zu den Angaben des Ortes.</p>
+
+<h2 id="aktuell">6c. Aktualitätsabfrage</h2>
+<p>Etwa alle 6 Monate schicken wir Raumgebern eine E-Mail mit der Frage, ob ihr Angebot noch stimmt. Ohne Antwort pausieren wir den Eintrag.
+  Wir speichern dafür nur, wann wir gefragt haben und wann zuletzt bestätigt wurde.</p>
 
 <h2 id="karte">7. Karte</h2>
 <p>Die Karte lädt erst nach deinem Klick auf „Karte anzeigen“ Kartenkacheln von der OpenStreetMap Foundation

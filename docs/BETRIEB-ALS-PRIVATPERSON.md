@@ -1,5 +1,13 @@
 # Kann ich das Portal als Privatperson betreiben?
 
+> **Entscheidung (Oktober 2026):** Ein Verein betreibt die Plattform und prüft die Gruppen.
+> Die Einschätzung unten bleibt als Begründung stehen. Für den Verein gilt: Er steht im
+> Impressum (Name, Anschrift, vertretungsberechtigter Vorstand, Vereinsregister), ist
+> Verantwortlicher nach DSGVO und braucht AV-Verträge mit Hoster und E-Mail-Anbieter.
+> Satzungszweck prüfen, z. B. „Förderung des bürgerschaftlichen Engagements“
+> (§ 52 Abs. 2 Nr. 25 AO). Eine Vereinshaftpflicht mit Vermögensschadenbaustein ist
+> sinnvoll.
+
 *Einschätzung, keine Rechtsberatung. Stand: Oktober 2026. Vor dem Start bitte von einer
 Anwältin oder einem Anwalt (oder z. B. der Beratung der Verbraucherzentrale bzw. einer
 Ehrenamtsberatung) prüfen lassen.*

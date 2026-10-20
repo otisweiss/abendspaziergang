@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Häufige Fragen{% endblock %}
+{% block content %}
+<article class="prose faq">
+<p><a href="{% url 'pages:help' %}">← Hilfe</a></p>
+<h1>Häufige Fragen</h1>
+<p class="lead">Hier findet ihr Antworten auf die wichtigsten Fragen. Klickt auf eine Frage, um die Antwort zu lesen.</p>
+
+<h2 id="allgemein">Allgemein</h2>
+<details id="was-ist"><summary>Was ist {{ SITE_NAME }}?</summary>
+  <p>{{ SITE_NAME }} ist eine Liste von Räumen in Köln. Die Räume können Vereine, Chöre, Initiativen und andere Gruppen nutzen. Die Liste ist kostenlos.
+  {{ OPERATOR_NAME }} betreibt sie ehrenamtlich und verdient damit kein Geld.</p></details>
+<details id="kosten"><summary>Was kostet {{ SITE_NAME }}?</summary>
+  <p>Nichts. Für Gruppen und für Raumgeber ist {{ SITE_NAME }} kostenlos. Ob ein Raum etwas kostet, entscheidet der Raumgeber. Das steht beim Raum.</p></details>
+<details id="vermieten"><summary>Vermietet ihr die Räume selbst?</summary>
+  <p>Nein. Wir zeigen nur, wo es Räume gibt und wie man dort anfragt. Die Absprache und einen möglichen Vertrag macht ihr direkt mit dem Raumgeber.</p></details>
+<details id="feiern"><summary>Kann ich hier einen Raum für meinen Geburtstag finden?</summary>
+  <p>Nein. {{ SITE_NAME }} ist für gemeinschaftliche und soziale Zwecke. Rein private Feiern wie Geburtstage oder Hochzeiten gehören nicht dazu.
+  Erlaubt sind zum Beispiel Proben, Gruppentreffen, Stammtische, Infoabende, Workshops oder ein Sommerfest eures Vereins.</p></details>
+<details id="bestaetigt"><summary>Was heißt „Noch nicht vom Ort bestätigt“?</summary>
+  <p>Diese Orte haben wir in öffentlichen Quellen gefunden, zum Beispiel auf der Webseite der Stadt Köln. Sie bieten dort selbst Räume an.
+  Der Ort hat seine Angaben bei uns aber noch nicht geprüft. Fragt deshalb am besten direkt über die Webseite des Ortes an.</p></details>
+
+<h2 id="gruppen">Für Gruppen</h2>
+<details id="wer-darf"><summary>Wer darf Räume suchen?</summary>
+  <p>Vereine, Chöre, Ensembles, Initiativen, Selbsthilfegruppen, gemeinnützige Träger und andere Gruppen ohne kommerziellen Zweck.
+  Ihr müsst kein eingetragener Verein sein.</p></details>
+<details id="warum-pruefen"><summary>Warum prüft ihr Gruppen vor der Freischaltung?</summary>
+  <p>Viele Raumgeber geben ihre Kontaktdaten nur frei, wenn sie wissen: Nur echte Gruppen sehen sie. {{ OPERATOR_NAME }} schaut sich deshalb jede Registrierung kurz an.
+  Das dauert meist 1 bis 2 Tage.</p></details>
+<details id="nicht-oeffentlich"><summary>Warum sehe ich bei manchen Orten keine Adresse?</summary>
+  <p>Das sind nicht öffentliche Orte, oft private Räume. Der Raumgeber möchte selbst entscheiden, welche Gruppe seine Adresse bekommt.
+  Schickt eine Anfrage über den Ort. Sagt der Raumgeber zu, seht ihr alle Angaben.</p></details>
+<details id="sammelanfrage"><summary>Kann ich mehrere Orte auf einmal anfragen?</summary>
+  <p>Ja, bei nicht öffentlichen Orten. Wählt in der Suche einen Stadtbezirk oder Stadtteil. Dann erscheint „Alle passenden Orte anfragen“.
+  Eure Anfrage geht an höchstens 10 Orte. Jeder Raumgeber sieht nur seine eigene Anfrage.</p></details>
+<details id="antwort"><summary>Wie lange dauert eine Antwort?</summary>
+  <p>Bei nicht öffentlichen Orten hat der Raumgeber 14 Tage Zeit. Kommt keine Antwort, endet die Anfrage. Wir schicken euch dann eine E-Mail.
+  Bei öffentlichen Orten hängt es vom Ort ab. Viele Häuser brauchen ein bis zwei Wochen.</p></details>
+<details id="frueh"><summary>Wie früh sollten wir anfragen?</summary>
+  <p>Für regelmäßige Termine, zum Beispiel eine wöchentliche Probe, am besten 4 bis 8 Wochen vorher. Für einmalige Termine mindestens 2 bis 4 Wochen vorher.
+  Beliebte Räume am Wochenende sind oft Monate im Voraus vergeben.</p></details>
+
+<h2 id="raumgeber">Für Raumgeber</h2>
+<details id="wer-anbieten"><summary>Wer kann einen Raum anbieten?</summary>
+  <p>Alle, die einen Raum für Gruppen haben: Bürgerzentren, Kirchengemeinden, Vereine, Bibliotheken, Gaststätten mit Nebenraum, Unternehmen mit Besprechungsraum,
+  und auch Privatpersonen. Privatpersonen wählen am besten „Nicht öffentlich“.</p></details>
+<details id="kontrolle"><summary>Behalte ich die Kontrolle über meinen Eintrag?</summary>
+  <p>Ja. Ihr entscheidet, was ihr angebt und wer anfragen darf. Über euren Bearbeitungslink ändert, pausiert oder entfernt ihr den Eintrag jederzeit.</p></details>
+<details id="aktualitaet"><summary>Warum bekomme ich alle paar Monate eine E-Mail?</summary>
+  <p>Wir fragen etwa alle 6 Monate, ob euer Angebot noch stimmt. Ein Klick auf „Ja, alles ist noch aktuell“ genügt.
+  Ohne Antwort pausieren wir den Eintrag nach 6 Wochen. Gelöscht wird nichts.</p></details>
+<details id="absagen"><summary>Muss ich jeder Gruppe zusagen?</summary>
+  <p>Nein. Ihr entscheidet bei jeder Anfrage selbst. Einen Grund für eine Absage müsst ihr nicht nennen.</p></details>
+<details id="gemeinnuetzig"><summary>Gefährdet die Raumüberlassung unsere Gemeinnützigkeit?</summary>
+  <p>Gemeinnützige Vereine dürfen Räume anderen gemeinnützigen Gruppen in der Regel günstig oder kostenlos überlassen.
+  Bei Unsicherheit fragt bitte eure Steuerberatung oder das Finanzamt. Das ist keine Rechtsberatung.</p></details>
+
+<h2 id="praktisch">Versicherung, Schlüssel und Musik</h2>
+<details id="versicherung"><summary>Wer haftet, wenn etwas kaputt geht?</summary>
+  <p>Das regeln Gruppe und Raumgeber miteinander. Viele Häuser verlangen, dass die Gruppe eine Haftpflichtversicherung hat.
+  Vereine haben oft eine Vereinshaftpflicht. Für einzelne Veranstaltungen gibt es eine Veranstalter-Haftpflicht.
+  Ehrenamtliche in Nordrhein-Westfalen sind oft über die Ehrenamtsversicherung des Landes geschützt. Prüft die Bedingungen im Einzelfall.</p></details>
+<details id="schluessel"><summary>Wie läuft die Schlüsselübergabe?</summary>
+  <p>Das sprecht ihr direkt ab. Haltet am besten schriftlich fest, wer den Schlüssel wann bekommt und zurückgibt.
+  Für Schäden durch einen verlorenen Schlüssel gibt es spezielle Versicherungen.</p></details>
+<details id="vertrag"><summary>Brauchen wir einen Vertrag?</summary>
+  <p>Für regelmäßige Nutzung ist eine kurze schriftliche Vereinbarung sinnvoll. Darin stehen: Zeiten, Kosten, Schlüssel, Reinigung, Hausordnung und Haftung.
+  Viele städtische und kirchliche Häuser haben eigene Nutzungsordnungen.</p></details>
+<details id="gema"><summary>Müssen wir Konzerte bei der GEMA anmelden?</summary>
+  <p>Wenn ihr Musik öffentlich aufführt, kann eine Anmeldung bei der GEMA nötig sein. Das gilt auch für Hauskonzerte, wenn jeder kommen kann.
+  Ein Treffen im geschlossenen Kreis ist oft nicht betroffen. Bitte prüft das vorher bei der GEMA.</p></details>
+
+<h2 id="daten">Datenschutz</h2>
+<details id="welche-daten"><summary>Welche Daten speichert ihr?</summary>
+  <p>Nur das Nötigste. Von Gruppen: E-Mail, Passwort (verschlüsselt), Name und Art der Gruppe, Zweck. Von Raumgebern: die Angaben zum Raum und eine E-Mail-Adresse für die Verwaltung.
+  Wir nutzen keine Werbung und kein Tracking. Mehr dazu in den <a href="{% url 'pages:privacy' %}">Datenschutzhinweisen</a>.</p></details>
+<details id="loeschen"><summary>Wann löscht ihr meine Daten?</summary>
+  <p>Ihr könnt euer Konto jederzeit selbst löschen. Wir löschen außerdem automatisch: unbestätigte Konten nach 7 Tagen,
+  Konten ohne Anmeldung nach 2 Jahren und Nutzungsanfragen nach 1 Jahr.</p></details>
+<details id="adresse-privat"><summary>Wer sieht die Adresse meines privaten Raums?</summary>
+  <p>Nur Gruppen, denen ihr zugesagt habt. Andere Gruppen sehen nur den Stadtteil. Auch die Karte zeigt nicht öffentliche Orte nicht.</p></details>
+</article>
+{% endblock %}

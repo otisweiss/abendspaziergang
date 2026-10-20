@@ -1,0 +1,24 @@
+Hallo,
+
+euer Raum „{{ venue.name }}“ steht bei {{ SITE_NAME }}.
+Wir fragen regelmäßig nach, ob die Angaben noch stimmen.
+So finden Gruppen nur Räume, die es wirklich gibt.
+
+Bitte öffnet diesen Link:
+
+{{ url }}
+
+Dort könnt ihr:
+- mit einem Klick bestätigen: „Ja, alles ist noch aktuell“
+- Angaben ändern
+- den Eintrag pausieren oder entfernen
+
+Das dauert weniger als eine Minute.
+Wenn ihr nicht antwortet, erinnern wir euch in {{ reminder_weeks }} Wochen noch einmal.
+Nach {{ pause_weeks }} Wochen ohne Antwort pausieren wir den Eintrag. Er wird dann nicht mehr angezeigt.
+Gelöscht wird nichts.
+
+Hinweis: Dieser Link ersetzt ältere Bearbeitungslinks.
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}

@@ -3,7 +3,7 @@ from django.db.models import Count, Max, Min, Q
 from .models import Room, Venue
 
 
-def search_venues(data):
+def search_venues(data, accessible_ids=frozenset()):
     """Wendet die bereinigten Daten des Suchformulars an.
 
     Raumbezogene Filter (Zweck, Größe, Kosten, Zeit, Ausstattung) müssen alle auf
@@ -13,22 +13,24 @@ def search_venues(data):
     venues = Venue.objects.listed()
 
     if q := data.get("q"):
-        venues = venues.filter(
-            Q(name__icontains=q)
-            | Q(operator__icontains=q)
-            | Q(description__icontains=q)
-            | Q(quarter__icontains=q)
-            | Q(street__icontains=q)
-            | Q(rooms__name__icontains=q)
-        )
+        # Bei nicht öffentlichen Orten darf die Suche Name und Adresse nicht verraten.
+        detail_match = Q(name__icontains=q) | Q(operator__icontains=q) | Q(street__icontains=q)
+        open_match = Q(description__icontains=q) | Q(quarter__icontains=q) | Q(rooms__name__icontains=q) | Q(public_title__icontains=q)
+        venues = venues.filter(open_match | (detail_match & (Q(visibility=Venue.Visibility.PUBLIC) | Q(pk__in=accessible_ids))))
     if district := data.get("district"):
         venues = venues.filter(district=district)
+    if quarter := data.get("quarter"):
+        venues = venues.filter(quarter__iexact=quarter)
     if operator_type := data.get("operator_type"):
         venues = venues.filter(operator_type=operator_type)
     if data.get("step_free"):
         venues = venues.filter(step_free=True)
+    if data.get("accessible_wc"):
+        venues = venues.filter(accessible_wc=True)
+    if visibility := data.get("visibility"):
+        venues = venues.filter(visibility=visibility)
 
-    rooms = Room.objects.filter(venue__status=Venue.Status.LISTED)
+    rooms = Room.objects.filter(venue__status__in=Venue.VISIBLE_STATUSES)
     room_filtered = False
     if purpose := data.get("purpose"):
         rooms = rooms.filter(purposes=purpose)

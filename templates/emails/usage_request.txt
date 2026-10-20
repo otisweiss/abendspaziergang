@@ -1,0 +1,25 @@
+Hallo,
+
+eine Gruppe möchte euren Raum „{{ venue.name }}“ nutzen.
+Die Anfrage kommt über {{ SITE_NAME }}.
+
+Gruppe:    {% if group %}{{ group.name }} ({{ group.get_kind_display }}){% else %}–{% endif %}
+Wofür:     {{ req.occasion }}
+Wann:      {{ req.dates }}
+Personen:  {{ req.persons }}
+{% if req.message %}
+Nachricht:
+{{ req.message }}
+{% endif %}
+Die Gruppe kennt euren Namen und eure Adresse noch nicht.
+Bitte antwortet über diesen Link:
+
+{{ url }}
+
+- Wenn ihr zusagt, sieht diese Gruppe eure Kontaktangaben. Ihr sprecht dann alles direkt ab.
+- Wenn ihr absagt, sieht die Gruppe nichts von euch.
+
+Der Link gilt {{ days }} Tage. Danach endet die Anfrage von selbst.
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Nutzungsanfrage{% endblock %}
+{% block content %}
+<h1>Eine Gruppe möchte euren Raum nutzen</h1>
+<p class="lead">Die Anfrage ist für <strong>{{ item.venue.name }}</strong>{% if item.room %}, Raum „{{ item.room.name }}“{% endif %}.</p>
+<section class="card narrow" aria-labelledby="wer">
+  <h2 id="wer">Die Anfrage</h2>
+  <dl class="room-facts">
+    {% if group %}<dt>Gruppe</dt><dd>{{ group.name }} ({{ group.get_kind_display }})</dd>{% endif %}
+    <dt>Wofür</dt><dd>{{ item.occasion }}</dd>
+    <dt>Wann</dt><dd>{{ item.dates }}</dd>
+    <dt>Personen</dt><dd>{{ item.persons }}</dd>
+    {% if item.message %}<dt>Nachricht</dt><dd>{{ item.message|linebreaksbr }}</dd>{% endif %}
+  </dl>
+  <p class="help">Die Gruppe wurde von {{ OPERATOR_NAME }} geprüft. Sie hat zugesagt, keine rein privaten Feiern anzufragen.</p>
+</section>
+<section class="card narrow" aria-labelledby="antwort">
+  <h2 id="antwort">Eure Antwort</h2>
+  <p><strong>Wenn ihr zusagt:</strong> Diese Gruppe sieht Name, Adresse und eure Kontaktangaben. Sie meldet sich bei euch, um alles Weitere abzusprechen.
+    Mit der Zusage ist noch nichts gebucht.</p>
+  <p><strong>Wenn ihr absagt:</strong> Die Gruppe erfährt nur, dass es diesmal nicht passt. Sie sieht keine Angaben zu euch.</p>
+  <form method="post" novalidate>{% csrf_token %}
+    {% include "_field.html" with field=form.note %}
+    <div class="button-row">
+      <button class="btn" name="action" value="accept" type="submit">Zusagen</button>
+      <button class="btn btn-secondary" name="action" value="decline" type="submit">Absagen</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

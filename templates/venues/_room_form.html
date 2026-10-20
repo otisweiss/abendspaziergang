@@ -16,8 +16,10 @@
   {% include "_field.html" with field=rform.equipment %}
   <fieldset class="slots">
     <legend>{{ rform.slots.label }}</legend>
+    <p class="help">Kreuzt an, wann Gruppen den Raum meistens nutzen können. Genaue Zeiten könnt ihr darunter aufschreiben.</p>
     <div class="table-scroll">
     <table class="slot-grid">
+      <caption class="sr">Häkchen bei jedem Tag und jeder Tageszeit, an denen der Raum grundsätzlich frei ist</caption>
       <thead><tr><th scope="col"><span class="sr">Tag</span></th><th scope="col">Vormittag</th><th scope="col">Nachmittag</th><th scope="col">Abend</th><th scope="col">ab 22 Uhr</th></tr></thead>
       <tbody>
         {% for row in rform.slot_rows %}

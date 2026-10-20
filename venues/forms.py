@@ -2,7 +2,7 @@ from django import forms
 from django.forms import inlineformset_factory
 
 from .koeln import ALL_QUARTERS, DISTRICTS
-from .models import Equipment, Purpose, Room, TimeSlot, Venue
+from .models import Equipment, Purpose, Room, TimeSlot, UsageRequest, Venue
 
 SLOT_CHOICES = [
     (f"{day}-{period}", f"{day_label} {period_label}")
@@ -36,12 +36,17 @@ class VenueForm(forms.ModelForm):
     class Meta:
         model = Venue
         fields = [
+            "visibility", "public_title",
             "name", "operator", "operator_type", "description", "website",
             "street", "postcode", "quarter", "district", "transit",
-            "step_free", "accessible_wc", "hearing_loop", "accessibility_notes",
+            "step_free", "elevator", "accessible_wc", "hearing_loop", "disabled_parking", "accessibility_notes",
             "contact_email", "contact_phone", "contact_url", "contact_notes",
         ]
         widgets = {
+            "visibility": forms.RadioSelect,
+            "street": forms.TextInput(attrs={"autocomplete": "street-address"}),
+            "contact_email": forms.EmailInput(attrs={"autocomplete": "email"}),
+            "contact_phone": forms.TextInput(attrs={"autocomplete": "tel", "inputmode": "tel"}),
             "description": forms.Textarea(attrs={"rows": 4}),
             "quarter": forms.TextInput(attrs={"list": "quarters"}),
             "postcode": forms.TextInput(attrs={"inputmode": "numeric", "pattern": "5[01][0-9]{3}"}),
@@ -55,8 +60,13 @@ class VenueForm(forms.ModelForm):
 
     def clean(self):
         data = super().clean()
-        if not any(data.get(f) for f in ("contact_email", "contact_phone", "contact_url")):
-            raise forms.ValidationError("Bitte mindestens einen Kontaktweg für Raumanfragen angeben.")
+        if data.get("visibility") == Venue.Visibility.ON_REQUEST:
+            if not data.get("quarter"):
+                self.add_error("quarter", "Bei nicht öffentlichen Orten brauchen wir den Stadtteil. Nur er wird angezeigt.")
+        elif not any(data.get(f) for f in ("contact_email", "contact_phone", "contact_url")):
+            raise forms.ValidationError(
+                "Bitte gib mindestens einen Kontaktweg an: E-Mail, Telefon oder eine Seite für Anfragen."
+            )
         return data
 
 
@@ -115,6 +125,38 @@ RoomFormSet = inlineformset_factory(
 )
 
 
+class BatchRequestForm(forms.ModelForm):
+    """Sammelanfrage an alle passenden nicht öffentlichen Orte."""
+
+    privacy = forms.BooleanField(
+        label="Ich bin einverstanden, dass die angefragten Raumgeber den Namen unserer Gruppe, meine Nachricht und "
+        "die Antwort-Adresse bekommen."
+    )
+
+    class Meta:
+        model = UsageRequest
+        fields = ["occasion", "dates", "persons", "message", "reply_email"]
+        widgets = {"message": forms.Textarea(attrs={"rows": 4}), "reply_email": forms.EmailInput(attrs={"autocomplete": "email"})}
+
+
+class UsageRequestForm(forms.ModelForm):
+    privacy = forms.BooleanField(
+        label="Ich bin einverstanden, dass der Raumgeber den Namen unserer Gruppe, meine Nachricht und die "
+        "Antwort-Adresse bekommt."
+    )
+
+    class Meta:
+        model = UsageRequest
+        fields = ["room", "occasion", "dates", "persons", "message", "reply_email"]
+        widgets = {"message": forms.Textarea(attrs={"rows": 4}), "reply_email": forms.EmailInput(attrs={"autocomplete": "email"})}
+
+    def __init__(self, *args, venue, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["room"].queryset = venue.rooms.all()
+        self.fields["room"].empty_label = "egal / weiß nicht"
+        self.fields["persons"].min_value = 1
+
+
 class SubmissionForm(HoneypotMixin, VenueForm):
     """Öffentliches Formular „Ort melden“."""
 
@@ -127,6 +169,16 @@ class SubmissionForm(HoneypotMixin, VenueForm):
 
     class Meta(VenueForm.Meta):
         fields = VenueForm.Meta.fields + ["manager_email"]
+
+
+class RespondForm(forms.Form):
+    note = forms.CharField(
+        label="Nachricht an die Gruppe (freiwillig)",
+        required=False,
+        max_length=500,
+        widget=forms.Textarea(attrs={"rows": 3}),
+        help_text="z. B. ein Terminvorschlag oder wie ihr euch abstimmt.",
+    )
 
 
 class ConsentForm(forms.Form):
@@ -147,6 +199,7 @@ class SearchForm(forms.Form):
 
     q = forms.CharField(label="Suchbegriff", required=False)
     district = forms.ChoiceField(label="Stadtbezirk", required=False, choices=[("", "alle")] + DISTRICTS)
+    quarter = forms.ChoiceField(label="Stadtteil", required=False, choices=[("", "alle")] + [(q, q) for q in ALL_QUARTERS])
     purpose = forms.ModelChoiceField(label="Wofür?", required=False, queryset=Purpose.objects.all(), empty_label="egal")
     capacity = forms.IntegerField(label="Personen mindestens", required=False, min_value=1, max_value=5000)
     max_cost = forms.ChoiceField(label="Kosten", required=False, choices=MAX_COST_CHOICES)
@@ -158,6 +211,12 @@ class SearchForm(forms.Form):
     )
     period = forms.ChoiceField(label="Tageszeit", required=False, choices=[("", "egal")] + list(TimeSlot.Period.choices))
     step_free = forms.BooleanField(label="Stufenlos erreichbar", required=False)
+    accessible_wc = forms.BooleanField(label="Barrierefreies WC", required=False)
+    visibility = forms.ChoiceField(
+        label="Art der Listung",
+        required=False,
+        choices=[("", "alle"), ("oeffentlich", "nur öffentliche Orte"), ("auf_anfrage", "nur Orte auf Anfrage (z. B. privat)")],
+    )
     equipment = forms.ModelMultipleChoiceField(
         label="Ausstattung (alle gewählten)",
         required=False,

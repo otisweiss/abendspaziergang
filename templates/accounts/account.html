@@ -5,6 +5,7 @@
 <p>Angemeldet als <strong>{{ user.email }}</strong>{% if profile %} · Status: <span class="badge">{{ profile.get_status_display }}</span>{% endif %}</p>
 {% if form %}
 <form method="post" class="narrow card" novalidate>{% csrf_token %}
+  {% include "_form_errors.html" %}
   <h2>Angaben zur Gruppe</h2>
   {% for field in form %}{% include "_field.html" %}{% endfor %}
   <button class="btn" type="submit">Speichern</button>

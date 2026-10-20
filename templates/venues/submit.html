@@ -2,11 +2,18 @@
 {% block title %}Raum anbieten{% endblock %}
 {% block content %}
 <h1>Raum anbieten</h1>
-<p class="lead">Du hast einen Raum, den Vereine, Chöre oder Initiativen nutzen können – kostenlos, gegen Spende oder gegen Miete? Trag ihn hier ein.
-  Nach deiner E-Mail-Bestätigung prüfen wir den Eintrag kurz und schalten ihn frei.</p>
+<p class="lead">Du hast einen Raum für Vereine, Chöre oder Initiativen? Hier kannst du ihn eintragen.
+  Das geht ohne Konto und dauert etwa 10 Minuten.</p>
+<ol class="steps">
+  <li>Du füllst das Formular aus.</li>
+  <li>Wir schicken dir eine E-Mail. Darin bestätigst du den Eintrag.</li>
+  <li>{{ OPERATOR_NAME }} prüft den Eintrag und schaltet ihn frei.</li>
+</ol>
+<p class="help">Du willst den Raum nicht öffentlich zeigen, zum Beispiel ein Wohnzimmer? Wähle „Nicht öffentlich“. Mehr dazu in der <a href="{% url 'pages:help_providers' %}">Anleitung für Raumgeber</a>.</p>
 <form method="post" novalidate>
   {% csrf_token %}
   {% include "_honeypot.html" %}
+  {% include "_form_errors.html" with extra_form=None %}
   {% include "venues/_venue_fields.html" %}
   <fieldset class="card">
     <legend>Verwaltung und Zustimmung</legend>

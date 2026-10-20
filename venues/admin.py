@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
 from django.utils import timezone
 
-from .models import Bookmark, Equipment, ListingRequest, Purpose, Room, TimeSlot, Venue
+from .models import Bookmark, Equipment, ListingRequest, Purpose, Room, TimeSlot, UsageRequest, Venue
 from .services import ListingRequestError, send_listing_request, send_templated_mail
 
 
@@ -36,23 +36,31 @@ class ListingRequestInline(admin.TabularInline):
 
 @admin.register(Venue)
 class VenueAdmin(admin.ModelAdmin):
-    list_display = ["name", "quarter", "district", "operator_type", "status", "source", "listing_request_count", "updated_at"]
-    list_filter = ["status", "district", "operator_type", "source"]
+    list_display = ["name", "quarter", "district", "visibility", "status", "source", "last_confirmed_at", "updated_at"]
+    list_filter = ["status", "visibility", "district", "operator_type", "source"]
     search_fields = ["name", "operator", "street", "quarter", "contact_email", "manager_email"]
-    readonly_fields = ["consent_at", "consent_text", "listing_request_count", "last_confirmed_at", "created_at", "updated_at"]
+    readonly_fields = [
+        "consent_at", "consent_text", "listing_request_count", "last_confirmed_at", "freshness_check_sent_at",
+        "freshness_reminder_sent_at", "created_at", "updated_at",
+    ]
     inlines = [RoomInline, ListingRequestInline]
-    actions = ["action_send_request", "action_publish", "action_pause", "action_reject"]
+    actions = ["action_send_request", "action_publish", "action_public_source", "action_pause", "action_reject"]
     fieldsets = [
-        (None, {"fields": ["name", "operator", "operator_type", "description", "website", "status"]}),
+        (None, {"fields": ["name", "operator", "operator_type", "description", "website", "status", "paused_reason"]}),
+        ("Sichtbarkeit", {"fields": ["visibility", "public_title"]}),
         ("Lage", {"fields": ["street", "postcode", "quarter", "district", ("latitude", "longitude"), "transit"]}),
-        ("Barrierefreiheit", {"fields": ["step_free", "accessible_wc", "hearing_loop", "accessibility_notes"]}),
+        (
+            "Barrierefreiheit",
+            {"fields": ["step_free", "elevator", "accessible_wc", "hearing_loop", "disabled_parking", "accessibility_notes"]},
+        ),
         ("Kontakt für Gruppen", {"fields": ["contact_email", "contact_phone", "contact_url", "contact_notes"]}),
         (
             "Verwaltung (nicht öffentlich)",
             {
                 "fields": [
                     "manager_email", "source", "source_reference", "osm_id", "internal_notes", "consent_at",
-                    "consent_text", "listing_request_count", "last_confirmed_at", "created_at", "updated_at",
+                    "consent_text", "listing_request_count", "last_confirmed_at", "freshness_check_sent_at",
+                    "freshness_reminder_sent_at", "created_at", "updated_at",
                 ]
             },
         ),
@@ -87,6 +95,22 @@ class VenueAdmin(admin.ModelAdmin):
         if done:
             self.message_user(request, f"{done} Ort(e) freigegeben.", messages.SUCCESS)
 
+    @admin.action(description="Als „aus öffentlicher Quelle“ sichtbar machen (nur Einrichtungen mit öffentlichem Raumangebot)")
+    def action_public_source(self, request, queryset):
+        from django.core.exceptions import ValidationError
+
+        done = 0
+        for venue in queryset.filter(status__in=[Venue.Status.RESEARCHED, Venue.Status.REQUESTED]):
+            venue.status = Venue.Status.PUBLIC_SOURCE
+            try:
+                venue.clean()
+            except ValidationError as exc:
+                self.message_user(request, f"„{venue}“: {exc.messages[0]}", messages.WARNING)
+                continue
+            venue.save()
+            done += 1
+        self.message_user(request, f"{done} Ort(e) sichtbar gemacht.", messages.SUCCESS)
+
     @admin.action(description="Pausieren (ausblenden)")
     def action_pause(self, request, queryset):
         n = queryset.filter(status=Venue.Status.LISTED).update(status=Venue.Status.PAUSED, updated_at=timezone.now())
@@ -115,6 +139,22 @@ class ListingRequestAdmin(admin.ModelAdmin):
     readonly_fields = ["venue", "recipient", "sent_at", "sent_by", "expires_at", "outcome", "answered_at"]
 
     def has_add_permission(self, request):
+        return False
+
+
+@admin.register(UsageRequest)
+class UsageRequestAdmin(admin.ModelAdmin):
+    """Nur Metadaten. Nachrichten zwischen Gruppe und Raumgeber sieht die Redaktion nicht."""
+
+    list_display = ["venue", "batch", "persons", "status", "created_at", "answered_at"]
+    list_filter = ["status"]
+    fields = ["venue", "status", "batch", "persons", "created_at", "expires_at", "answered_at"]
+    readonly_fields = fields
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False
 
 

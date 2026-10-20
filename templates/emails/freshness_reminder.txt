@@ -1,0 +1,14 @@
+Hallo,
+
+vor {{ reminder_weeks }} Wochen haben wir gefragt, ob euer Raum „{{ venue.name }}“ noch aktuell ist.
+Wir haben noch keine Antwort.
+
+Bitte öffnet diesen Link und klickt auf „Ja, alles ist noch aktuell“:
+
+{{ url }}
+
+Ohne Antwort pausieren wir den Eintrag in {{ remaining_weeks }} Wochen.
+Gruppen sehen ihn dann nicht mehr. Ihr könnt ihn jederzeit wieder einschalten.
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}

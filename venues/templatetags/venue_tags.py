@@ -21,3 +21,9 @@ def page_url(querystring, number):
 def district_name(label):
     """„4 – Ehrenfeld“ → „Ehrenfeld“."""
     return str(label).split("–", 1)[-1].strip() if label else ""
+
+
+@register.filter
+def details_visible(venue, accessible):
+    """Darf die Gruppe Name und Adresse sehen? Öffentlich oder Anfrage zugesagt."""
+    return venue.is_public or venue.pk in (accessible or ())

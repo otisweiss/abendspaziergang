@@ -3,6 +3,7 @@
 {% block content %}
 <h1>Anmelden</h1>
 <form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% include "_form_errors.html" %}
   {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
   {% include "_field.html" with field=form.username %}
   {% include "_field.html" with field=form.password %}

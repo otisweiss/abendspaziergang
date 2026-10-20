@@ -1,0 +1,14 @@
+Hallo,
+
+wir haben zweimal gefragt, ob euer Raum „{{ venue.name }}“ noch aktuell ist.
+Leider kam keine Antwort. Deshalb haben wir den Eintrag pausiert.
+Gruppen sehen ihn jetzt nicht mehr. Die Angaben bleiben gespeichert.
+
+Ihr wollt wieder dabei sein? Ein Klick genügt:
+
+{{ url }}
+
+Ihr wollt nicht mehr dabei sein? Dann könnt ihr den Eintrag über den Link auch entfernen.
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}

@@ -192,8 +192,12 @@ MAP_ATTRIBUTION = env(
 )
 
 # --- Fachliche Einstellungen ------------------------------------------------
-# Müssen Gruppen nach der E-Mail-Bestätigung zusätzlich von der Redaktion freigeschaltet werden?
-GROUP_MANUAL_APPROVAL = env_bool("GROUP_MANUAL_APPROVAL", False)
+# Gruppen werden nach der E-Mail-Bestätigung vom Betreiberverein geprüft und freigeschaltet.
+GROUP_MANUAL_APPROVAL = env_bool("GROUP_MANUAL_APPROVAL", True)
+# An diese Adresse(n) gehen Hinweise auf neue Registrierungen und Meldungen (nur Name der Gruppe, kein Inhalt).
+MODERATION_EMAILS = env_list("MODERATION_EMAILS")
+# Name des Betreibervereins für Texte und E-Mails
+OPERATOR_NAME = env("OPERATOR_NAME", "Veedelsräume e.V.")
 
 # Löschfristen in Tagen (siehe docs/DATENSCHUTZ.md)
 RETENTION = {
@@ -202,6 +206,19 @@ RETENTION = {
     "listing_request_validity": int(env("LISTING_REQUEST_VALIDITY_DAYS", "90")),
     "inactive_accounts": int(env("RETENTION_INACTIVE_ACCOUNTS_DAYS", "730")),
 }
+# Aktualitätsabfrage: Alle FRESHNESS_INTERVAL_DAYS fragen wir per E-Mail nach, ob ein Angebot noch stimmt.
+# Ohne Antwort folgt nach FRESHNESS_REMINDER_DAYS eine Erinnerung, nach FRESHNESS_PAUSE_DAYS wird pausiert.
+FRESHNESS_INTERVAL_DAYS = int(env("FRESHNESS_INTERVAL_DAYS", "180"))
+FRESHNESS_REMINDER_DAYS = int(env("FRESHNESS_REMINDER_DAYS", "21"))
+FRESHNESS_PAUSE_DAYS = int(env("FRESHNESS_PAUSE_DAYS", "42"))
+
+# Nutzungsanfragen an nicht öffentliche Orte
+USAGE_REQUEST_VALIDITY_DAYS = int(env("USAGE_REQUEST_VALIDITY_DAYS", "14"))
+USAGE_REQUEST_RETENTION_DAYS = int(env("USAGE_REQUEST_RETENTION_DAYS", "365"))
+MAX_USAGE_REQUESTS_PER_DAY = int(env("MAX_USAGE_REQUESTS_PER_DAY", "5"))
+# Höchstzahl der Orte, die eine Sammelanfrage erreicht (schützt private Raumgeber vor zu vielen Mails)
+MAX_BATCH_TARGETS = int(env("MAX_BATCH_TARGETS", "10"))
+
 # Höchstzahl der Listungsanfragen pro Ort (Erstanfrage + eine Erinnerung)
 MAX_LISTING_REQUESTS = int(env("MAX_LISTING_REQUESTS", "2"))
 

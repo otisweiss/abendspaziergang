@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Anleitung für Gruppen{% endblock %}
+{% block content %}
+<article class="prose">
+<p><a href="{% url 'pages:help' %}">← Hilfe</a></p>
+<h1>Anleitung für Gruppen</h1>
+<p class="lead">So findet eure Gruppe einen Raum. Das Ganze ist kostenlos.</p>
+<nav aria-label="Inhalt" class="toc"><ol>
+  <li><a href="#registrieren">Registrieren</a></li>
+  <li><a href="#suchen">Räume suchen</a></li>
+  <li><a href="#oeffentlich">Öffentliche Orte anfragen</a></li>
+  <li><a href="#nicht-oeffentlich">Nicht öffentliche Orte anfragen</a></li>
+  <li><a href="#sammel">Viele Orte auf einmal anfragen</a></li>
+  <li><a href="#konto">Euer Konto</a></li>
+</ol></nav>
+
+<h2 id="registrieren">1. Registrieren</h2>
+<ol class="steps">
+  <li>Klickt auf <a href="{% url 'accounts:register' %}">Registrieren</a>.</li>
+  <li>Gebt eine E-Mail-Adresse und ein Passwort ein. Das Passwort braucht mindestens 10 Zeichen.</li>
+  <li>Schreibt den Namen eurer Gruppe und wofür ihr Räume sucht. Euren eigenen Namen brauchen wir nicht.</li>
+  <li>Bestätigt, dass ihr keine Räume für rein private Feiern sucht. Private Feiern sind zum Beispiel Geburtstage oder Hochzeiten.</li>
+  <li>Wir schicken euch eine E-Mail. Klickt auf den Link darin und dann auf „Jetzt bestätigen“.</li>
+  <li>{{ OPERATOR_NAME }} prüft eure Angaben. Das dauert meist 1 bis 2 Tage. Dann bekommt ihr eine E-Mail.</li>
+</ol>
+
+<h2 id="suchen">2. Räume suchen</h2>
+<p>Meldet euch an und klickt auf „Räume finden“. Mit den Filtern grenzt ihr die Suche ein. Ihr müsst nicht alle ausfüllen.</p>
+<ul>
+  <li><strong>Wofür?</strong> zum Beispiel Chorprobe, Stammtisch oder Infoabend</li>
+  <li><strong>Stadtbezirk und Stadtteil</strong></li>
+  <li><strong>Personen mindestens:</strong> wie viele Leute kommen</li>
+  <li><strong>Kosten:</strong> zum Beispiel „nur kostenlos“</li>
+  <li><strong>Wochentag und Tageszeit:</strong> wann ihr den Raum braucht</li>
+  <li><strong>Barrierefreiheit:</strong> stufenlos oder mit barrierefreiem WC</li>
+  <li><strong>Ausstattung:</strong> zum Beispiel Klavier, Beamer oder Küche</li>
+</ul>
+<p>Auf dem Handy öffnet ihr die Filter mit dem Knopf „Filter“. Mit ☆ merkt ihr euch einen Ort.</p>
+
+<h2 id="oeffentlich">3. Öffentliche Orte anfragen</h2>
+<p>Bei öffentlichen Orten seht ihr Name, Adresse und Kontakt. Ihr fragt direkt beim Ort an, zum Beispiel per E-Mail oder Telefon.</p>
+<p>Schreibt in eure Anfrage:</p>
+<ul>
+  <li>wer ihr seid</li>
+  <li>wofür ihr den Raum braucht</li>
+  <li>wie viele Personen kommen</li>
+  <li>wann und wie oft ihr den Raum braucht</li>
+</ul>
+<p>Die Absprache, zum Beispiel über Kosten oder Schlüssel, macht ihr direkt mit dem Ort. {{ SITE_NAME }} ist dabei nicht beteiligt.</p>
+
+<h2 id="nicht-oeffentlich">4. Nicht öffentliche Orte anfragen</h2>
+<p>Manche Orte sind nicht öffentlich. Oft sind das private Räume, zum Beispiel ein Wohnzimmer für Hauskonzerte. Ihr erkennt sie am Hinweis „Nur auf Anfrage“.</p>
+<ol class="steps">
+  <li>Öffnet den Ort. Ihr seht Stadtteil, Größe, Ausstattung und wofür der Raum passt.</li>
+  <li>Füllt das Formular „Diesen Ort anfragen“ aus.</li>
+  <li>Wir schicken eure Anfrage per E-Mail an den Raumgeber.</li>
+  <li>Der Raumgeber sagt zu oder ab. Er hat dafür 14 Tage Zeit.</li>
+  <li>Bei einer Zusage bekommt ihr eine E-Mail. Jetzt seht ihr Name, Adresse und Kontakt.</li>
+</ol>
+<p>Bitte gebt die Adresse eines privaten Raums nicht weiter.</p>
+
+<h2 id="sammel">5. Viele Orte auf einmal anfragen</h2>
+<p>Ihr sucht in einem bestimmten Veedel? Dann könnt ihr alle passenden nicht öffentlichen Orte auf einmal anfragen.</p>
+<ol class="steps">
+  <li>Wählt in der Suche einen Stadtbezirk oder Stadtteil.</li>
+  <li>Wählt weitere Filter, zum Beispiel „bis 30 Personen“ und „Klavier“.</li>
+  <li>Über der Ergebnisliste steht dann: „Alle passenden Orte anfragen“. Klickt darauf.</li>
+  <li>Schreibt eure Anfrage einmal. Wir schicken sie an jeden passenden Ort einzeln, höchstens an 10 Orte.</li>
+</ol>
+<p>Unter „Meine Anfragen“ seht ihr, wer geantwortet hat.</p>
+
+<h2 id="konto">6. Euer Konto</h2>
+<ul>
+  <li>Unter „Konto“ ändert ihr die Angaben zu eurer Gruppe.</li>
+  <li>Ihr könnt alle eure Daten als Datei herunterladen.</li>
+  <li>Ihr könnt euer Konto jederzeit selbst löschen.</li>
+  <li>Habt ihr euch 2 Jahre lang nicht angemeldet, löschen wir das Konto automatisch.</li>
+</ul>
+</article>
+{% endblock %}

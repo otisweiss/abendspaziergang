@@ -1,63 +1,102 @@
 {% extends "base.html" %}{% load static venue_tags %}
-{% block title %}{{ venue.name }}{% endblock %}
+{% block title %}{% if has_access %}{{ venue.name }}{% else %}{{ venue.display_title }}{% endif %}{% endblock %}
 {% block content %}
-<p><a href="{% url 'venues:search' %}">← zur Suche</a></p>
+<p><a href="{% url 'venues:search' %}">← zurück zur Suche</a></p>
 <header class="detail-head">
-  <div>
-    <h1>{{ venue.name }}</h1>
-    <p class="meta">{{ venue.address }}{% if venue.quarter %} · {{ venue.quarter }}{% endif %}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}</p>
-    {% if venue.operator %}<p class="meta">Träger: {{ venue.operator }}{% if venue.operator_type %} ({{ venue.get_operator_type_display }}){% endif %}</p>{% endif %}
+  <div class="detail-title">
+    <h1>{% if has_access %}{{ venue.name }}{% else %}{{ venue.display_title }}{% endif %}</h1>
+    {% if has_access %}
+      <p class="meta">{{ venue.address }}{% if venue.quarter %} · {{ venue.quarter }}{% endif %}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}</p>
+      {% if venue.operator %}<p class="meta">Träger: {{ venue.operator }}{% if venue.operator_type %} ({{ venue.get_operator_type_display }}){% endif %}</p>{% endif %}
+    {% else %}
+      <p class="meta">{{ venue.quarter }}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}{% if venue.operator_type %} · {{ venue.get_operator_type_display }}{% endif %}</p>
+    {% endif %}
   </div>
   <form method="post" action="{% url 'venues:bookmark' venue.pk %}">{% csrf_token %}
     <button class="btn btn-secondary" type="submit">{% if is_bookmarked %}★ Gemerkt{% else %}☆ Merken{% endif %}</button>
   </form>
 </header>
-{% if not venue.is_visible %}<p class="msg msg-warning">Vorschau für die Redaktion – Status: {{ venue.get_status_display }}</p>{% endif %}
+{% if not venue.is_visible %}<p class="msg msg-warning">Vorschau für die Redaktion. Status: {{ venue.get_status_display }}</p>{% endif %}
+{% if venue.is_unconfirmed_source %}
+  <div class="msg msg-info">
+    <p><strong>Noch nicht vom Ort bestätigt.</strong> Diese Angaben stammen aus einer öffentlichen Quelle. Der Ort bietet dort selbst Räume an.
+      Bitte prüft Details wie Kosten und Zeiten direkt beim Ort. <a href="{% url 'pages:faq' %}#bestaetigt">Was heißt das?</a></p>
+    <p class="help">Quelle: <a href="{{ venue.source_reference }}" rel="noopener noreferrer">{{ venue.source_reference|truncatechars:70 }}</a>.
+      Ihr gehört zu diesem Ort und möchtet Angaben ändern oder entfernen? Schreibt uns (siehe <a href="{% url 'pages:imprint' %}">Impressum</a>).</p>
+  </div>
+{% endif %}
+{% if not venue.is_public %}
+  <p class="msg {% if has_access %}msg-success{% else %}msg-info{% endif %}">
+    {% if has_access %}Der Raumgeber hat eurer Anfrage zugesagt. Ihr seht jetzt alle Angaben. Bitte gebt sie nicht weiter.
+    {% else %}Das ist ein nicht öffentlicher Ort. Name, Adresse und Kontakt seht ihr, wenn der Raumgeber eurer Anfrage zusagt.{% endif %}
+  </p>
+{% endif %}
 
 <div class="detail-layout">
-  <div>
+  <div class="detail-main">
     {% if venue.description %}<p class="lead">{{ venue.description|linebreaksbr }}</p>{% endif %}
     {% for room in venue.rooms.all %}
-    <section class="card room">
-      <h2>{{ room.name }}</h2>
+    <section class="card room" aria-labelledby="raum-{{ room.pk }}">
+      <h2 id="raum-{{ room.pk }}">{{ room.name }}</h2>
       <ul class="facts">
         {% if room.capacity %}<li>bis {{ room.capacity }} Personen</li>{% endif %}
         {% if room.area_sqm %}<li>{{ room.area_sqm }} m²</li>{% endif %}
         <li class="cost cost-{{ room.cost }}">{{ room.get_cost_display }}</li>
         <li>{{ room.get_rhythm_display }}</li>
       </ul>
-      {% if room.price_notes %}<p><strong>Konditionen:</strong> {{ room.price_notes }}</p>{% endif %}
-      {% if room.purposes.all %}<p><strong>Geeignet für:</strong> {{ room.purposes.all|join:", " }}</p>{% endif %}
-      {% if room.equipment.all %}<p><strong>Ausstattung:</strong> {{ room.equipment.all|join:", " }}</p>{% endif %}
-      {% if room.slots.all %}
-        <p><strong>Grundsätzlich nutzbar:</strong></p>
-        <ul class="slot-list">{% for slot in room.slots.all %}<li>{{ slot }}</li>{% endfor %}</ul>
-      {% endif %}
-      {% if room.hours_notes %}<p><strong>Zeiten:</strong> {{ room.hours_notes }}</p>{% endif %}
+      <dl class="room-facts">
+        {% if room.price_notes %}<dt>Kosten und Bedingungen</dt><dd>{{ room.price_notes }}</dd>{% endif %}
+        {% if room.purposes.all %}<dt>Passt für</dt><dd>{{ room.purposes.all|join:", " }}</dd>{% endif %}
+        {% if room.equipment.all %}<dt>Ausstattung</dt><dd>{{ room.equipment.all|join:", " }}</dd>{% endif %}
+        {% if room.slots.all %}<dt>Meistens frei</dt><dd><ul class="slot-list">{% for slot in room.slots.all %}<li>{{ slot }}</li>{% endfor %}</ul></dd>{% endif %}
+        {% if room.hours_notes %}<dt>Zeiten genauer</dt><dd>{{ room.hours_notes }}</dd>{% endif %}
+      </dl>
     </section>
     {% empty %}
-      <p>Zu den einzelnen Räumen liegen noch keine Angaben vor.</p>
+      <p>Zu den einzelnen Räumen gibt es noch keine Angaben.</p>
     {% endfor %}
   </div>
-  <aside>
-    <section class="card contact">
-      <h2>So fragt ihr an</h2>
+  <aside class="detail-side">
+    {% if has_access %}
+    <section class="card contact" aria-labelledby="kontakt">
+      <h2 id="kontakt">So fragt ihr an</h2>
       {% if venue.contact_email %}<p>E-Mail: <a href="mailto:{{ venue.contact_email }}">{{ venue.contact_email }}</a></p>{% endif %}
       {% if venue.contact_phone %}<p>Telefon: <a href="tel:{{ venue.contact_phone }}">{{ venue.contact_phone }}</a></p>{% endif %}
-      {% if venue.contact_url %}<p><a href="{{ venue.contact_url }}" rel="noopener noreferrer">Zum Anfrageformular</a></p>{% endif %}
+      {% if venue.contact_url %}<p><a href="{{ venue.contact_url }}" rel="noopener noreferrer">Zum Anfrage-Formular des Ortes</a></p>{% endif %}
       {% if venue.contact_notes %}<p class="help">{{ venue.contact_notes }}</p>{% endif %}
-      <p class="help">Bitte erwähnt bei der Anfrage, dass ihr über {{ SITE_NAME }} kommt, und beschreibt kurz Gruppe, Zweck, Personenzahl und Termin.</p>
+      <p class="help">Schreibt bei der Anfrage: wer ihr seid, wofür ihr den Raum braucht, wie viele Personen kommen und wann. Sagt gern, dass ihr über {{ SITE_NAME }} kommt.</p>
       {% if venue.website %}<p><a href="{{ venue.website }}" rel="noopener noreferrer">Webseite des Ortes</a></p>{% endif %}
     </section>
-    <section class="card">
-      <h2>Barrierefreiheit</h2>
+    {% elif open_request %}
+    <section class="card" aria-labelledby="anfrage">
+      <h2 id="anfrage">Eure Anfrage ist unterwegs</h2>
+      <p>Ihr habt am {{ open_request.created_at|date:"d.m.Y" }} angefragt. Der Raumgeber hat bis zum {{ open_request.expires_at|date:"d.m.Y" }} Zeit zu antworten.
+        Wir schicken euch eine E-Mail.</p>
+      <p><a href="{% url 'venues:my_requests' %}">Zu meinen Anfragen</a></p>
+    </section>
+    {% elif request_form %}
+    <section class="card" aria-labelledby="anfrage">
+      <h2 id="anfrage">Diesen Ort anfragen</h2>
+      {% if last_request %}<p class="help">Eure letzte Anfrage: {{ last_request.get_status_display }}. Ihr könnt neu anfragen.</p>{% endif %}
+      <p class="help">Wir leiten eure Anfrage per E-Mail weiter. Der Raumgeber sieht euren Gruppennamen, eure Nachricht und die Antwort-Adresse.</p>
+      <form method="post" novalidate>{% csrf_token %}
+        {% include "_form_errors.html" with form=request_form %}
+        {% for field in request_form %}{% include "_field.html" %}{% endfor %}
+        <button class="btn" type="submit">Anfrage senden</button>
+      </form>
+    </section>
+    {% endif %}
+    <section class="card" aria-labelledby="barriere">
+      <h2 id="barriere">Barrierefreiheit</h2>
       <ul class="checklist">
-        <li class="{{ venue.step_free|yesno:'yes,no' }}">Stufenlos erreichbar</li>
-        <li class="{{ venue.accessible_wc|yesno:'yes,no' }}">Barrierefreies WC</li>
-        <li class="{{ venue.hearing_loop|yesno:'yes,no' }}">Induktionsschleife</li>
+        <li class="{{ venue.step_free|yesno:'yes,no' }}"><span class="sr">{{ venue.step_free|yesno:"Ja,Nein" }}:</span> Stufenlos erreichbar</li>
+        <li class="{{ venue.elevator|yesno:'yes,no' }}"><span class="sr">{{ venue.elevator|yesno:"Ja,Nein" }}:</span> Aufzug</li>
+        <li class="{{ venue.accessible_wc|yesno:'yes,no' }}"><span class="sr">{{ venue.accessible_wc|yesno:"Ja,Nein" }}:</span> Barrierefreies WC</li>
+        <li class="{{ venue.hearing_loop|yesno:'yes,no' }}"><span class="sr">{{ venue.hearing_loop|yesno:"Ja,Nein" }}:</span> Induktionsschleife (Hörhilfe)</li>
+        <li class="{{ venue.disabled_parking|yesno:'yes,no' }}"><span class="sr">{{ venue.disabled_parking|yesno:"Ja,Nein" }}:</span> Behindertenparkplatz</li>
       </ul>
       {% if venue.accessibility_notes %}<p class="help">{{ venue.accessibility_notes }}</p>{% endif %}
-      {% if venue.transit %}<p><strong>ÖPNV:</strong> {{ venue.transit }}</p>{% endif %}
+      {% if venue.transit and has_access %}<p><strong>Mit Bus und Bahn:</strong> {{ venue.transit }}</p>{% endif %}
     </section>
     {% include "_map.html" %}
     {% if venue.last_confirmed_at %}<p class="help">Vom Raumgeber zuletzt bestätigt am {{ venue.last_confirmed_at|date:"d.m.Y" }}.</p>{% endif %}
