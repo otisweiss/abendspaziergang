@@ -1,6 +1,6 @@
 {% load venue_tags %}
 {% with open=venue|details_visible:accessible %}
-<article class="venue-card{% if not venue.is_public %} venue-hidden{% endif %}">
+<article class="venue-card{% if not venue.is_public %} venue-hidden{% endif %}" data-venue-id="{{ venue.pk }}">
   <h3><a href="{{ venue.get_absolute_url }}">{% if open %}{{ venue.name }}{% else %}{{ venue.display_title }}{% endif %}</a></h3>
   <p class="meta">{{ venue.quarter|default:"Köln" }}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}{% if venue.operator_type %} · {{ venue.get_operator_type_display }}{% endif %}</p>
   <ul class="facts">

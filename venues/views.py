@@ -67,7 +67,7 @@ def search(request):
     data = form.cleaned_data if form.is_valid() else {}
     accessible = Venue.objects.accessible_ids(request.user)
     results = search_venues(data, accessible)
-    page = Paginator(results, 20).get_page(request.GET.get("seite"))
+    page = Paginator(results, settings.SEARCH_PAGE_SIZE).get_page(request.GET.get("seite"))
     query = request.GET.copy()
     query.pop("seite", None)
     map_points = [

@@ -34,7 +34,7 @@
     </form>
   </details>
   <section class="results" aria-labelledby="ergebnis">
-    <h2 id="ergebnis" class="result-count" aria-live="polite"><strong>{{ total }}</strong> Ort{{ total|pluralize:"e" }} gefunden</h2>
+    <h2 id="ergebnis" class="result-count" aria-live="polite"><strong id="result-total">{{ total }}</strong> <span id="result-label">Ort{{ total|pluralize:"e" }}</span> gefunden</h2>
 
     {% if series_count > 1 %}
       <div class="panel panel-accent batch-cta">
