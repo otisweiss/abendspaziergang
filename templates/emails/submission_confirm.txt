@@ -1,0 +1,16 @@
+Hallo,
+
+danke, dass du „{{ venue.name }}“ bei {{ SITE_NAME }} eintragen möchtest!
+
+Bitte bestätige den Eintrag über diesen Link:
+
+{{ url }}
+
+Über denselben Link kannst du den Eintrag später bearbeiten, pausieren oder löschen.
+Bitte bewahre diese E-Mail auf und gib den Link nicht weiter.
+
+Ohne Bestätigung löschen wir die Angaben nach {{ days }} Tagen automatisch.
+Falls du dich nicht eingetragen hast, ignoriere diese E-Mail einfach.
+
+Viele Grüße
+{{ SITE_NAME }}

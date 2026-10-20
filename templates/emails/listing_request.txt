@@ -1,0 +1,27 @@
+Guten Tag,
+
+wir bauen mit {{ SITE_NAME }} eine nicht kommerzielle Übersicht über Räume auf, die
+Kölner Vereine, Chöre, Initiativen und Selbsthilfegruppen für Treffen, Proben,
+Stammtische oder Infoabende nutzen können. Viele Gruppen suchen solche Räume und
+wissen nicht, wo sie fragen können.
+
+Wir haben „{{ venue.name }}“ aus öffentlich zugänglichen Angaben vorgemerkt
+({{ venue.source_reference|default:"z. B. Ihre Webseite oder OpenStreetMap" }}).
+Der Eintrag ist bisher NICHT sichtbar und wird es nur mit Ihrer Zustimmung.
+
+Über diesen persönlichen Link können Sie die Angaben prüfen, ergänzen und der
+Aufnahme zustimmen – oder mit einem Klick ablehnen:
+
+{{ url }}
+
+Der Link ist {{ days }} Tage gültig. Was Sie davon haben: Anfragen von Gruppen, die
+zu Ihnen passen. Sie entscheiden selbst, was Sie angeben, wie Gruppen Sie erreichen
+und ob Sie den Eintrag später pausieren oder löschen.
+
+Wenn Sie nicht reagieren, fragen wir höchstens noch einmal nach. Bei einer Ablehnung
+speichern wir nur Name und Adresse als Sperrvermerk, damit wir Sie nicht erneut anschreiben.
+Datenschutzhinweise: {{ SITE_URL }}/datenschutz/
+
+Viele Grüße
+Ihr Team von {{ SITE_NAME }}
+{{ SITE_URL }}/impressum/

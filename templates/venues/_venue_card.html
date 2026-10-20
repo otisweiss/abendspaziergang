@@ -1,0 +1,17 @@
+{% load venue_tags %}
+<article class="venue-card">
+  <h3><a href="{{ venue.get_absolute_url }}">{{ venue.name }}</a></h3>
+  <p class="meta">{{ venue.quarter|default:"Köln" }}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}{% if venue.operator_type %} · {{ venue.get_operator_type_display }}{% endif %}</p>
+  <ul class="facts">
+    {% if venue.room_count %}<li>{{ venue.room_count }} {% if venue.room_count == 1 %}Raum{% else %}Räume{% endif %}</li>{% endif %}
+    {% if venue.max_capacity %}<li>bis {{ venue.max_capacity }} Personen</li>{% endif %}
+    {% if venue.min_cost is not None %}<li class="cost cost-{{ venue.min_cost }}">ab: {{ venue.min_cost|cost_label }}</li>{% endif %}
+    {% if venue.step_free %}<li>stufenlos</li>{% endif %}
+  </ul>
+  {% if bookmarked is not None %}
+  <form method="post" action="{% url 'venues:bookmark' venue.pk %}" class="bookmark-form">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <button class="linklike" type="submit">{% if venue.pk in bookmarked %}★ Gemerkt{% else %}☆ Merken{% endif %}</button>
+  </form>
+  {% endif %}
+</article>

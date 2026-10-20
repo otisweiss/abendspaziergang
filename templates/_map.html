@@ -1,0 +1,12 @@
+{% load static %}
+{% if map_points %}
+<section class="map-box" aria-label="Karte">
+  {{ map_points|json_script:"map-points" }}
+  <div id="map" class="map" data-tiles="{{ MAP_TILE_URL }}" data-attribution="{{ MAP_ATTRIBUTION }}" data-leaflet-js="{% static 'vendor/leaflet/leaflet.js' %}" data-leaflet-css="{% static 'vendor/leaflet/leaflet.css' %}" hidden></div>
+  <div class="map-consent" id="map-consent">
+    <p>Die Karte lädt Kacheln von OpenStreetMap. Dabei wird deine IP-Adresse an die OpenStreetMap Foundation übertragen.
+      <a href="{% url 'pages:privacy' %}#karte">Mehr dazu</a></p>
+    <button type="button" class="btn" id="map-load">Karte anzeigen</button>
+  </div>
+</section>
+{% endif %}

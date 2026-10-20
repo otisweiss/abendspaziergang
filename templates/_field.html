@@ -1,0 +1,12 @@
+<div class="field{% if field.errors %} has-error{% endif %}{% if field.field.widget.input_type == 'checkbox' %} field-check{% endif %}">
+  {% if field.field.widget.input_type == 'checkbox' and not field.field.widget.allow_multiple_selected %}
+    <label>{{ field }} <span>{{ field.label }}{% if field.field.required %} <abbr title="Pflichtfeld">*</abbr>{% endif %}</span></label>
+  {% elif field.field.widget.allow_multiple_selected and field.field.widget.input_type == 'checkbox' %}
+    <fieldset class="checks"><legend>{{ field.label }}</legend>{% for cb in field %}<label class="chip">{{ cb.tag }} <span>{{ cb.choice_label }}</span></label>{% endfor %}</fieldset>
+  {% else %}
+    <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} <abbr title="Pflichtfeld">*</abbr>{% endif %}</label>
+    {{ field }}
+  {% endif %}
+  {% if field.help_text %}<p class="help">{{ field.help_text|safe }}</p>{% endif %}
+  {% for error in field.errors %}<p class="error">{{ error }}</p>{% endfor %}
+</div>

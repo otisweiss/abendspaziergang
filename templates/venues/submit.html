@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}Raum anbieten{% endblock %}
+{% block content %}
+<h1>Raum anbieten</h1>
+<p class="lead">Du hast einen Raum, den Vereine, Chöre oder Initiativen nutzen können – kostenlos, gegen Spende oder gegen Miete? Trag ihn hier ein.
+  Nach deiner E-Mail-Bestätigung prüfen wir den Eintrag kurz und schalten ihn frei.</p>
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "_honeypot.html" %}
+  {% include "venues/_venue_fields.html" %}
+  <fieldset class="card">
+    <legend>Verwaltung und Zustimmung</legend>
+    {% include "_field.html" with field=form.manager_email %}
+    {% include "_field.html" with field=form.consent %}
+    {% include "_field.html" with field=form.privacy %}
+    <p class="help"><a href="{% url 'pages:privacy' %}">Datenschutzhinweise</a> · Bitte keine Namen von Privatpersonen in Freitextfelder schreiben.</p>
+  </fieldset>
+  <button class="btn btn-large" type="submit">Eintrag absenden</button>
+</form>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/forms.js' %}"></script>{% endblock %}

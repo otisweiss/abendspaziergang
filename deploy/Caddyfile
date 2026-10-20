@@ -1,0 +1,28 @@
+# Automatisches HTTPS über Let's Encrypt. DOMAIN in .env setzen.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:8000
+
+	# Zugriffsprotokoll nur mit gekürzten IP-Adressen (IPv4 /16, IPv6 /32), 7 Tage Aufbewahrung
+	log {
+		output file /data/access.log {
+			roll_size 10MiB
+			roll_keep_for 168h
+		}
+		format filter {
+			wrap json
+			fields {
+				request>remote_ip ip_mask {
+					ipv4 16
+					ipv6 32
+				}
+				request>client_ip ip_mask {
+					ipv4 16
+					ipv6 32
+				}
+				request>headers delete
+				resp_headers delete
+			}
+		}
+	}
+}

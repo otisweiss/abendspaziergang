@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Anmelden{% endblock %}
+{% block content %}
+<h1>Anmelden</h1>
+<form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+  {% include "_field.html" with field=form.username %}
+  {% include "_field.html" with field=form.password %}
+  <input type="hidden" name="next" value="{{ next }}">
+  <button class="btn" type="submit">Anmelden</button>
+  <p class="mt"><a href="{% url 'accounts:password_reset' %}">Passwort vergessen?</a> · <a href="{% url 'accounts:register' %}">Noch kein Konto?</a></p>
+</form>
+{% endblock %}

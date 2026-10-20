@@ -1,0 +1,12 @@
+Hallo,
+
+danke für die Registrierung von „{{ group.name }}“ bei {{ SITE_NAME }}.
+Bitte bestätige deine E-Mail-Adresse (der Link ist 48 Stunden gültig):
+
+{{ url }}
+
+Falls du dich nicht registriert hast, ignoriere diese E-Mail. Unbestätigte Konten
+löschen wir nach 7 Tagen automatisch.
+
+Viele Grüße
+{{ SITE_NAME }}

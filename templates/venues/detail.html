@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% load static venue_tags %}
+{% block title %}{{ venue.name }}{% endblock %}
+{% block content %}
+<p><a href="{% url 'venues:search' %}">← zur Suche</a></p>
+<header class="detail-head">
+  <div>
+    <h1>{{ venue.name }}</h1>
+    <p class="meta">{{ venue.address }}{% if venue.quarter %} · {{ venue.quarter }}{% endif %}{% with d=venue.get_district_display|district_name %}{% if d and d != venue.quarter %} · Bezirk {{ d }}{% endif %}{% endwith %}</p>
+    {% if venue.operator %}<p class="meta">Träger: {{ venue.operator }}{% if venue.operator_type %} ({{ venue.get_operator_type_display }}){% endif %}</p>{% endif %}
+  </div>
+  <form method="post" action="{% url 'venues:bookmark' venue.pk %}">{% csrf_token %}
+    <button class="btn btn-secondary" type="submit">{% if is_bookmarked %}★ Gemerkt{% else %}☆ Merken{% endif %}</button>
+  </form>
+</header>
+{% if not venue.is_visible %}<p class="msg msg-warning">Vorschau für die Redaktion – Status: {{ venue.get_status_display }}</p>{% endif %}
+
+<div class="detail-layout">
+  <div>
+    {% if venue.description %}<p class="lead">{{ venue.description|linebreaksbr }}</p>{% endif %}
+    {% for room in venue.rooms.all %}
+    <section class="card room">
+      <h2>{{ room.name }}</h2>
+      <ul class="facts">
+        {% if room.capacity %}<li>bis {{ room.capacity }} Personen</li>{% endif %}
+        {% if room.area_sqm %}<li>{{ room.area_sqm }} m²</li>{% endif %}
+        <li class="cost cost-{{ room.cost }}">{{ room.get_cost_display }}</li>
+        <li>{{ room.get_rhythm_display }}</li>
+      </ul>
+      {% if room.price_notes %}<p><strong>Konditionen:</strong> {{ room.price_notes }}</p>{% endif %}
+      {% if room.purposes.all %}<p><strong>Geeignet für:</strong> {{ room.purposes.all|join:", " }}</p>{% endif %}
+      {% if room.equipment.all %}<p><strong>Ausstattung:</strong> {{ room.equipment.all|join:", " }}</p>{% endif %}
+      {% if room.slots.all %}
+        <p><strong>Grundsätzlich nutzbar:</strong></p>
+        <ul class="slot-list">{% for slot in room.slots.all %}<li>{{ slot }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if room.hours_notes %}<p><strong>Zeiten:</strong> {{ room.hours_notes }}</p>{% endif %}
+    </section>
+    {% empty %}
+      <p>Zu den einzelnen Räumen liegen noch keine Angaben vor.</p>
+    {% endfor %}
+  </div>
+  <aside>
+    <section class="card contact">
+      <h2>So fragt ihr an</h2>
+      {% if venue.contact_email %}<p>E-Mail: <a href="mailto:{{ venue.contact_email }}">{{ venue.contact_email }}</a></p>{% endif %}
+      {% if venue.contact_phone %}<p>Telefon: <a href="tel:{{ venue.contact_phone }}">{{ venue.contact_phone }}</a></p>{% endif %}
+      {% if venue.contact_url %}<p><a href="{{ venue.contact_url }}" rel="noopener noreferrer">Zum Anfrageformular</a></p>{% endif %}
+      {% if venue.contact_notes %}<p class="help">{{ venue.contact_notes }}</p>{% endif %}
+      <p class="help">Bitte erwähnt bei der Anfrage, dass ihr über {{ SITE_NAME }} kommt, und beschreibt kurz Gruppe, Zweck, Personenzahl und Termin.</p>
+      {% if venue.website %}<p><a href="{{ venue.website }}" rel="noopener noreferrer">Webseite des Ortes</a></p>{% endif %}
+    </section>
+    <section class="card">
+      <h2>Barrierefreiheit</h2>
+      <ul class="checklist">
+        <li class="{{ venue.step_free|yesno:'yes,no' }}">Stufenlos erreichbar</li>
+        <li class="{{ venue.accessible_wc|yesno:'yes,no' }}">Barrierefreies WC</li>
+        <li class="{{ venue.hearing_loop|yesno:'yes,no' }}">Induktionsschleife</li>
+      </ul>
+      {% if venue.accessibility_notes %}<p class="help">{{ venue.accessibility_notes }}</p>{% endif %}
+      {% if venue.transit %}<p><strong>ÖPNV:</strong> {{ venue.transit }}</p>{% endif %}
+    </section>
+    {% include "_map.html" %}
+    {% if venue.last_confirmed_at %}<p class="help">Vom Raumgeber zuletzt bestätigt am {{ venue.last_confirmed_at|date:"d.m.Y" }}.</p>{% endif %}
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/map.js' %}"></script>{% endblock %}

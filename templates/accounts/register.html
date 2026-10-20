@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Registrieren{% endblock %}
+{% block content %}
+<h1>Als Gruppe registrieren</h1>
+<p class="lead">Die Raumsuche ist für Vereine, Chöre, Initiativen und andere nicht kommerzielle Gruppen.
+  Wir fragen nur, was wir wirklich brauchen. Einen Klarnamen brauchen wir nicht.</p>
+<form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% include "_honeypot.html" %}
+  {% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+  <fieldset class="card"><legend>Zugang</legend>
+    {% include "_field.html" with field=form.email %}
+    {% include "_field.html" with field=form.password1 %}
+    {% include "_field.html" with field=form.password2 %}
+  </fieldset>
+  <fieldset class="card"><legend>Eure Gruppe</legend>
+    {% include "_field.html" with field=form.name %}
+    {% include "_field.html" with field=form.kind %}
+    {% include "_field.html" with field=form.purpose %}
+    {% include "_field.html" with field=form.district %}
+  </fieldset>
+  <fieldset class="card"><legend>Zustimmung</legend>
+    {% include "_field.html" with field=form.not_private %}
+    {% include "_field.html" with field=form.terms %}
+    <p class="help"><a href="{% url 'pages:terms' %}">Nutzungsbedingungen</a> · <a href="{% url 'pages:privacy' %}">Datenschutz</a></p>
+  </fieldset>
+  <button class="btn btn-large" type="submit">Registrieren</button>
+</form>
+{% endblock %}

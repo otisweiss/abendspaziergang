@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Link ungültig{% endblock %}
+{% block content %}
+<div class="panel">
+<h1>Dieser Link ist ungültig oder abgelaufen</h1>
+<p>Vielleicht wurde inzwischen ein neuer Link angefordert. <a href="{% url 'venues:request_link' %}">Neuen Bearbeitungslink anfordern</a></p>
+</div>
+{% endblock %}

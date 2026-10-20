@@ -1,0 +1,61 @@
+{% load static %}<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ SITE_NAME }}{% endblock %} · Räume für Gruppen in Köln</title>
+  <meta name="description" content="Räume für Vereine, Chöre und Initiativen in Köln finden – von kostenlos bis kostenpflichtig.">
+  <link rel="icon" href="{% static 'favicon.svg' %}" type="image/svg+xml">
+  <link rel="stylesheet" href="{% static 'css/site.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <a class="skip" href="#inhalt">Zum Inhalt springen</a>
+  <header class="site-header">
+    <div class="wrap header-inner">
+      <a class="brand" href="{% url 'pages:home' %}"><span class="brand-mark" aria-hidden="true">▣</span> {{ SITE_NAME }}</a>
+      <nav aria-label="Hauptnavigation">
+        <ul>
+          {% if can_search %}
+            <li><a href="{% url 'venues:search' %}">Räume finden</a></li>
+            <li><a href="{% url 'venues:bookmarks' %}">Merkliste</a></li>
+          {% endif %}
+          <li><a href="{% url 'venues:submit' %}">Raum anbieten</a></li>
+          {% if user.is_authenticated %}
+            <li><a href="{% url 'accounts:account' %}">Konto</a></li>
+            <li>
+              <form method="post" action="{% url 'accounts:logout' %}" class="inline">{% csrf_token %}
+                <button type="submit" class="linklike">Abmelden</button>
+              </form>
+            </li>
+          {% else %}
+            <li><a href="{% url 'accounts:login' %}">Anmelden</a></li>
+            <li><a class="btn btn-small" href="{% url 'accounts:register' %}">Registrieren</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+  <main id="inhalt" class="wrap">
+    {% if messages %}
+      <div class="messages" role="status">
+        {% for message in messages %}<p class="msg msg-{{ message.tags }}">{{ message }}</p>{% endfor %}
+      </div>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <div class="wrap footer-inner">
+      <p>{{ SITE_NAME }} – eine nicht kommerzielle Raumbörse für Gruppen und Vereine in Köln.</p>
+      <ul>
+        <li><a href="{% url 'pages:about' %}">Über das Projekt</a></li>
+        <li><a href="{% url 'pages:terms' %}">Nutzungsbedingungen</a></li>
+        <li><a href="{% url 'pages:privacy' %}">Datenschutz</a></li>
+        <li><a href="{% url 'pages:imprint' %}">Impressum</a></li>
+      </ul>
+      <p class="small">Keine Cookies außer den technisch notwendigen. Kein Tracking.</p>
+    </div>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

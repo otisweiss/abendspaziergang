@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% load static %}
+{% block title %}Eintrag verwalten{% endblock %}
+{% block content %}
+<h1>Eintrag verwalten: {{ venue.name }}</h1>
+<p class="status-line">Status: <span class="badge badge-{{ venue.status }}">{{ venue.get_status_display }}</span></p>
+
+{% if venue.status == "unbestaetigt" %}
+  <div class="panel panel-accent">
+    <p>Bitte bestätige deine E-Mail-Adresse, damit wir deinen Eintrag prüfen können.</p>
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="confirm_email">E-Mail bestätigen</button></form>
+  </div>
+{% elif venue.status == "angefragt" %}
+  <div class="panel panel-accent">
+    <p><strong>Hallo!</strong> Wir bauen eine nicht kommerzielle Übersicht über Räume, die Kölner Vereine, Chöre und Initiativen nutzen können.
+    Diesen Ort haben wir aus öffentlich zugänglichen Angaben vorgemerkt. <strong>Er ist bisher nirgends sichtbar.</strong></p>
+    <p>Wenn du einverstanden bist, ergänze oder korrigiere die Angaben unten und stimme der Veröffentlichung zu.
+    Wenn nicht, klicke ganz unten auf „Nicht aufnehmen“. Dann fragen wir nicht noch einmal an.</p>
+  </div>
+{% elif venue.status == "pruefung" %}
+  <div class="panel"><p>Danke! Wir prüfen den Eintrag und schalten ihn in Kürze frei. Du kannst ihn weiter bearbeiten.</p></div>
+{% endif %}
+
+<p class="help">Diese Seite ist über deinen persönlichen Link erreichbar. Bitte gib den Link nicht weiter.
+  Einen neuen Link kannst du jederzeit <a href="{% url 'venues:request_link' %}">anfordern</a> – der alte wird dann ungültig.</p>
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  {% include "venues/_venue_fields.html" %}
+  {% if needs_consent %}
+    <fieldset class="card">
+      <legend>Zustimmung</legend>
+      {% include "_field.html" with field=consent_form.consent %}
+      <p class="help"><a href="{% url 'pages:privacy' %}">Datenschutzhinweise</a></p>
+    </fieldset>
+  {% endif %}
+  <button class="btn btn-large" type="submit" name="action" value="save">{% if needs_consent %}Speichern und zustimmen{% else %}Änderungen speichern{% endif %}</button>
+</form>
+
+<section class="card danger-zone">
+  <h2>Sichtbarkeit</h2>
+  {% if venue.status == "gelistet" %}
+    <form method="post">{% csrf_token %}<button class="btn btn-secondary" name="action" value="pause">Eintrag pausieren</button>
+      <span class="help">Gerade keine Kapazitäten? Der Eintrag wird ausgeblendet, bleibt aber gespeichert.</span></form>
+  {% elif venue.status == "pausiert" %}
+    <form method="post">{% csrf_token %}<button class="btn" name="action" value="resume">Wieder sichtbar machen</button></form>
+  {% endif %}
+  <form method="post" class="mt">{% csrf_token %}
+    <button class="btn btn-danger" name="action" value="remove">{% if venue.status == "angefragt" %}Nicht aufnehmen{% else %}Eintrag entfernen{% endif %}</button>
+    <span class="help">Wir löschen alle Angaben. Nur Name und Adresse bleiben als Sperrvermerk, damit wir nicht erneut anfragen.</span>
+  </form>
+</section>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/forms.js' %}"></script>{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Eintrag entfernt{% endblock %}
+{% block content %}
+<div class="panel">
+<h1>Erledigt</h1>
+<p>Wir haben die Angaben gelöscht und fragen nicht erneut an. Nur Name und Adresse des Ortes bleiben als Sperrvermerk gespeichert.</p>
+<p>Wenn du es dir anders überlegst, kannst du den Ort jederzeit <a href="{% url 'venues:submit' %}">neu eintragen</a>.</p>
+</div>
+{% endblock %}

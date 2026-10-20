@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% load static venue_tags %}
+{% block title %}Räume finden{% endblock %}
+{% block content %}
+<h1>Räume finden</h1>
+<div class="search-layout">
+  <form method="get" class="filters card" aria-label="Filter">
+    {% include "_field.html" with field=form.q %}
+    {% include "_field.html" with field=form.purpose %}
+    {% include "_field.html" with field=form.district %}
+    <div class="grid-2">
+      {% include "_field.html" with field=form.capacity %}
+      {% include "_field.html" with field=form.max_cost %}
+    </div>
+    <div class="grid-2">
+      {% include "_field.html" with field=form.day %}
+      {% include "_field.html" with field=form.period %}
+    </div>
+    {% include "_field.html" with field=form.operator_type %}
+    {% include "_field.html" with field=form.step_free %}
+    <details{% if form.equipment.value %} open{% endif %}>
+      <summary>Ausstattung</summary>
+      {% include "_field.html" with field=form.equipment %}
+    </details>
+    <div class="filter-actions">
+      <button class="btn" type="submit">Filtern</button>
+      <a href="{% url 'venues:search' %}">Zurücksetzen</a>
+    </div>
+  </form>
+  <section class="results" aria-live="polite">
+    <p class="result-count"><strong>{{ total }}</strong> Ort{{ total|pluralize:"e" }} gefunden</p>
+    {% include "_map.html" %}
+    {% for venue in page %}
+      {% include "venues/_venue_card.html" %}
+    {% empty %}
+      <div class="panel"><p>Keine passenden Orte. Probier es mit weniger Filtern.</p>
+      <p>Du kennst einen Ort, der fehlt? <a href="{% url 'venues:submit' %}">Hier melden</a> oder den Raumgeber darauf hinweisen.</p></div>
+    {% endfor %}
+    {% if page.has_other_pages %}
+    <nav class="pagination" aria-label="Seiten">
+      {% if page.has_previous %}<a href="{% page_url querystring page.previous_page_number %}">← zurück</a>{% endif %}
+      <span>Seite {{ page.number }} von {{ page.paginator.num_pages }}</span>
+      {% if page.has_next %}<a href="{% page_url querystring page.next_page_number %}">weiter →</a>{% endif %}
+    </nav>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'js/map.js' %}"></script>{% endblock %}

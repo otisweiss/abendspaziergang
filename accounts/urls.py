@@ -1,0 +1,35 @@
+from django.contrib.auth import views as auth_views
+from django.urls import path, reverse_lazy
+
+from . import views
+
+app_name = "accounts"
+
+urlpatterns = [
+    path("registrieren/", views.register, name="register"),
+    path("bestaetigen/<str:uidb64>/<str:token>/", views.verify, name="verify"),
+    path("anmelden/", views.LoginView.as_view(), name="login"),
+    path("abmelden/", auth_views.LogoutView.as_view(), name="logout"),
+    path("", views.account, name="account"),
+    path("export/", views.export, name="export"),
+    path("loeschen/", views.delete_account, name="delete"),
+    path("passwort/", views.PasswordResetView.as_view(), name="password_reset"),
+    path(
+        "passwort/gesendet/",
+        auth_views.PasswordResetDoneView.as_view(template_name="accounts/password_reset_done.html"),
+        name="password_reset_done",
+    ),
+    path(
+        "passwort/neu/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="accounts/password_reset_confirm.html",
+            success_url=reverse_lazy("accounts:password_reset_complete"),
+        ),
+        name="password_reset_confirm",
+    ),
+    path(
+        "passwort/fertig/",
+        auth_views.PasswordResetCompleteView.as_view(template_name="accounts/password_reset_complete.html"),
+        name="password_reset_complete",
+    ),
+]

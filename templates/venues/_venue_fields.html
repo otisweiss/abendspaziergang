@@ -1,0 +1,51 @@
+{% for error in form.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+<fieldset class="card">
+  <legend>Der Ort</legend>
+  <div class="grid-2">
+    {% include "_field.html" with field=form.name %}
+    {% include "_field.html" with field=form.operator %}
+  </div>
+  <div class="grid-2">
+    {% include "_field.html" with field=form.operator_type %}
+    {% include "_field.html" with field=form.website %}
+  </div>
+  {% include "_field.html" with field=form.description %}
+</fieldset>
+<fieldset class="card">
+  <legend>Lage</legend>
+  <div class="grid-3">
+    {% include "_field.html" with field=form.street %}
+    {% include "_field.html" with field=form.postcode %}
+    {% include "_field.html" with field=form.quarter %}
+  </div>
+  <datalist id="quarters">{% for q in quarters %}<option value="{{ q }}">{% endfor %}</datalist>
+  <div class="grid-2">
+    {% include "_field.html" with field=form.district %}
+    {% include "_field.html" with field=form.transit %}
+  </div>
+</fieldset>
+<fieldset class="card">
+  <legend>Barrierefreiheit</legend>
+  {% include "_field.html" with field=form.step_free %}
+  {% include "_field.html" with field=form.accessible_wc %}
+  {% include "_field.html" with field=form.hearing_loop %}
+  {% include "_field.html" with field=form.accessibility_notes %}
+</fieldset>
+<fieldset class="card">
+  <legend>So können Gruppen anfragen</legend>
+  <p class="help">Nur freigeschaltete Gruppen sehen diese Angaben. Bitte nutze möglichst Funktionsadressen statt persönlicher Kontaktdaten.</p>
+  <div class="grid-3">
+    {% include "_field.html" with field=form.contact_email %}
+    {% include "_field.html" with field=form.contact_phone %}
+    {% include "_field.html" with field=form.contact_url %}
+  </div>
+  {% include "_field.html" with field=form.contact_notes %}
+</fieldset>
+<h2>Räume</h2>
+{{ formset.management_form }}
+{% for error in formset.non_form_errors %}<p class="error">{{ error }}</p>{% endfor %}
+<div id="room-list">
+  {% for rform in formset %}{% include "venues/_room_form.html" with rform=rform num=forloop.counter %}{% endfor %}
+</div>
+<template id="room-template">{% include "venues/_room_form.html" with rform=formset.empty_form num="__num__" %}</template>
+<button type="button" class="btn btn-secondary" id="add-room" hidden>+ Weiteren Raum hinzufügen</button>

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Konto bestätigen{% endblock %}
+{% block content %}
+<div class="panel"><h1>Konto bestätigen</h1>
+<form method="post">{% csrf_token %}<button class="btn btn-large" type="submit">Jetzt bestätigen</button></form></div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<fieldset class="room-form card">
+  <legend>Raum {{ num }}</legend>
+  {{ rform.id }}
+  {% for error in rform.non_field_errors %}<p class="error">{{ error }}</p>{% endfor %}
+  <div class="grid-3">
+    {% include "_field.html" with field=rform.name %}
+    {% include "_field.html" with field=rform.capacity %}
+    {% include "_field.html" with field=rform.area_sqm %}
+  </div>
+  <div class="grid-3">
+    {% include "_field.html" with field=rform.cost %}
+    {% include "_field.html" with field=rform.price_notes %}
+    {% include "_field.html" with field=rform.rhythm %}
+  </div>
+  {% include "_field.html" with field=rform.purposes %}
+  {% include "_field.html" with field=rform.equipment %}
+  <fieldset class="slots">
+    <legend>{{ rform.slots.label }}</legend>
+    <div class="table-scroll">
+    <table class="slot-grid">
+      <thead><tr><th scope="col"><span class="sr">Tag</span></th><th scope="col">Vormittag</th><th scope="col">Nachmittag</th><th scope="col">Abend</th><th scope="col">ab 22 Uhr</th></tr></thead>
+      <tbody>
+        {% for row in rform.slot_rows %}
+        <tr><th scope="row">{{ row.label }}</th>
+          {% for cell in row.cells %}<td><input type="checkbox" name="{{ rform.prefix }}-slots" value="{{ cell.code }}" aria-label="{{ cell.label }}"{% if cell.checked %} checked{% endif %}></td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </fieldset>
+  {% include "_field.html" with field=rform.hours_notes %}
+  {% if rform.DELETE and rform.instance.pk %}{% include "_field.html" with field=rform.DELETE %}{% endif %}
+</fieldset>

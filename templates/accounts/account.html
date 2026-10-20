@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Konto{% endblock %}
+{% block content %}
+<h1>Dein Konto</h1>
+<p>Angemeldet als <strong>{{ user.email }}</strong>{% if profile %} · Status: <span class="badge">{{ profile.get_status_display }}</span>{% endif %}</p>
+{% if form %}
+<form method="post" class="narrow card" novalidate>{% csrf_token %}
+  <h2>Angaben zur Gruppe</h2>
+  {% for field in form %}{% include "_field.html" %}{% endfor %}
+  <button class="btn" type="submit">Speichern</button>
+</form>
+{% endif %}
+<section class="narrow card">
+  <h2>Deine Daten</h2>
+  <p><a class="btn btn-secondary" href="{% url 'accounts:export' %}">Meine Daten herunterladen (JSON)</a></p>
+  <p><a href="{% url 'accounts:password_reset' %}">Passwort ändern</a></p>
+  <p><a class="danger" href="{% url 'accounts:delete' %}">Konto löschen</a></p>
+</section>
+{% endblock %}

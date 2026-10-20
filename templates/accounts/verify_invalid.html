@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Link ungültig{% endblock %}
+{% block content %}
+<div class="panel"><h1>Der Bestätigungslink ist ungültig oder abgelaufen</h1>
+<p>Bitte <a href="{% url 'accounts:register' %}">registriere dich erneut</a>. Unbestätigte Konten werden nach 7 Tagen automatisch gelöscht, danach ist die Adresse wieder frei.</p></div>
+{% endblock %}

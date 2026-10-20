@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Noch nicht freigeschaltet{% endblock %}
+{% block content %}
+<div class="panel"><h1>Noch nicht freigeschaltet</h1>
+{% if current_group and current_group.status == "gesperrt" %}
+<p>Dieses Konto ist gesperrt. Bei Fragen schreib uns über die Kontaktadresse im <a href="{% url 'pages:imprint' %}">Impressum</a>.</p>
+{% else %}
+<p>Danke für deine Registrierung! Wir schalten neue Gruppen kurz von Hand frei, damit nur nicht kommerzielle Gruppen die Kontaktwege sehen. Das dauert meist ein bis zwei Tage.</p>
+{% endif %}</div>
+{% endblock %}

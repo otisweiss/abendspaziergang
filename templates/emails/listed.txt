@@ -1,0 +1,9 @@
+Hallo,
+
+dein Eintrag „{{ venue.name }}“ ist jetzt für freigeschaltete Gruppen sichtbar. Danke!
+
+Ändern, pausieren oder löschen kannst du ihn jederzeit über deinen Bearbeitungslink.
+Link verloren? Neuen anfordern: {{ SITE_URL }}/eintrag/link-anfordern/
+
+Viele Grüße
+{{ SITE_NAME }}

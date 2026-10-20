@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Räume für Gruppen und Vereine in Köln{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Räume für Vereine, Chöre und Initiativen in Köln</h1>
+  <p class="lead">Viele Räume in Köln stehen oft leer, obwohl Gruppen genau so etwas suchen: für die Chorprobe, den Stammtisch,
+    den Infoabend oder das Vereinstreffen. {{ SITE_NAME }} bringt beide Seiten zusammen – von kostenlos bis kostenpflichtig,
+    vom Hinterzimmer bis zum Saal.</p>
+  <div class="hero-actions">
+    {% if can_search %}
+      <a class="btn btn-large" href="{% url 'venues:search' %}">Räume finden</a>
+    {% else %}
+      <a class="btn btn-large" href="{% url 'accounts:register' %}">Als Gruppe registrieren</a>
+    {% endif %}
+    <a class="btn btn-large btn-secondary" href="{% url 'venues:submit' %}">Raum anbieten</a>
+  </div>
+</section>
+
+<section class="stats" aria-label="Zahlen">
+  <div class="stat"><span class="stat-value">{{ listed_count }}</span><span class="stat-label">Orte gelistet</span></div>
+  <div class="stat"><span class="stat-value">{{ collected_count }}</span><span class="stat-label">Orte gesammelt und angefragt</span></div>
+  <div class="stat"><span class="stat-value">9</span><span class="stat-label">Stadtbezirke</span></div>
+</section>
+
+<section class="two-col">
+  <div class="card">
+    <h2>Für Gruppen</h2>
+    <ol>
+      <li>Kostenlos registrieren (E-Mail, Name und Zweck der Gruppe – kein Klarname nötig).</li>
+      <li>Nach Stadtbezirk, Zweck, Größe, Kosten, Ausstattung und Wochentag filtern.</li>
+      <li>Direkt beim Ort anfragen. Wir vermitteln nur den Kontakt und verdienen nichts daran.</li>
+    </ol>
+    <p class="help">Für rein private Feiern wie Geburtstage oder Hochzeiten ist {{ SITE_NAME }} nicht gedacht.</p>
+  </div>
+  <div class="card">
+    <h2>Für Raumgeber</h2>
+    <ol>
+      <li>Ort und Räume in wenigen Minuten eintragen – ohne Konto.</li>
+      <li>Selbst festlegen: Kosten, Zeiten, Zwecke und wie Gruppen anfragen.</li>
+      <li>Über den persönlichen Link jederzeit ändern, pausieren oder löschen.</li>
+    </ol>
+    <p class="help">Bürgerzentren, Pfarrsäle, Vereinsheime, Kneipen-Hinterzimmer, Büros am Abend – alles willkommen.</p>
+  </div>
+</section>
+
+<section class="card">
+  <h2>Gelistete Orte nach Stadtbezirk</h2>
+  <ul class="district-list">
+    {% for label, n in districts %}<li><span>{{ label }}</span><strong>{{ n }}</strong></li>{% endfor %}
+  </ul>
+</section>
+
+<section class="card privacy-teaser">
+  <h2>Datenschutz von Anfang an</h2>
+  <p>Kein Tracking, keine Werbung, keine Daten an Dritte. Wir speichern nur, was für die Vermittlung nötig ist, und löschen
+    automatisch, was nicht mehr gebraucht wird. <a href="{% url 'pages:privacy' %}">Details</a></p>
+</section>
+{% endblock %}

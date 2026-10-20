@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Merkliste{% endblock %}
+{% block content %}
+<h1>Merkliste</h1>
+{% for item in items %}
+  <article class="venue-card"><h3><a href="{{ item.venue.get_absolute_url }}">{{ item.venue.name }}</a></h3>
+  <p class="meta">{{ item.venue.quarter|default:item.venue.get_district_display }}</p></article>
+{% empty %}
+  <p>Noch nichts gemerkt. In der <a href="{% url 'venues:search' %}">Suche</a> kannst du Orte mit ☆ merken.</p>
+{% endfor %}
+{% endblock %}

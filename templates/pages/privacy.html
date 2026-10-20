@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Datenschutz{% endblock %}
+{% block content %}
+<article class="prose">
+<h1>Datenschutzhinweise</h1>
+<p class="msg msg-warning">Entwurf – vor dem Start an den tatsächlichen Betrieb anpassen und rechtlich prüfen lassen.</p>
+
+<h2>Kurz gesagt</h2>
+<ul>
+  <li>Kein Tracking, keine Analyse-Tools, keine Werbung, keine Social-Media-Plugins.</li>
+  <li>Keine Schriften, Skripte oder Bilder von fremden Servern. Ausnahme: die Karte, und die nur nach deinem Klick.</li>
+  <li>Nur technisch notwendige Cookies (Anmeldung und Schutz vor gefälschten Formularen).</li>
+  <li>Wir speichern keine IP-Adressen in der Anwendung.</li>
+  <li>Nicht mehr benötigte Daten löschen wir automatisch.</li>
+</ul>
+
+<h2>1. Verantwortlich</h2>
+<p>[Name und Anschrift wie im <a href="{% url 'pages:imprint' %}">Impressum</a>], E-Mail: [datenschutz@…]</p>
+
+<h2>2. Aufruf der Webseite</h2>
+<p>Beim Aufruf verarbeitet unser Server technisch notwendige Daten (IP-Adresse, Zeitpunkt, aufgerufene Seite, Browserkennung).
+  Der Webserver speichert IP-Adressen nur gekürzt in Protokolldateien und löscht diese nach 7 Tagen. Rechtsgrundlage ist
+  Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist der sichere Betrieb.
+  Zum Schutz vor Missbrauch zählen wir Formularabsendungen. Dafür bilden wir aus der IP-Adresse einen täglich wechselnden,
+  nicht umkehrbaren Hashwert, der nach höchstens einer Stunde verfällt.</p>
+
+<h2>3. Cookies</h2>
+<p>Wir setzen nur ein Sitzungs-Cookie (für angemeldete Nutzer, 14 Tage) und ein CSRF-Cookie (Schutz vor gefälschten Formularen).
+  Beide sind technisch notwendig (§ 25 Abs. 2 Nr. 2 TDDDG). Eine Einwilligung ist dafür nicht erforderlich.</p>
+
+<h2>4. Registrierung von Gruppen</h2>
+<p>Wir verarbeiten E-Mail-Adresse, Passwort (nur als Argon2-Hash), Name, Art und Zweck der Gruppe, optional den Stadtbezirk,
+  den Zeitpunkt der Zustimmung zu den Nutzungsbedingungen und deine Merkliste. Zweck ist der Zugang zur Raumsuche.
+  Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Nutzungsvertrag).</p>
+<p><strong>Löschung:</strong> Unbestätigte Registrierungen nach 7 Tagen. Konten ohne Anmeldung seit 24 Monaten werden gelöscht.
+  Du kannst dein Konto jederzeit selbst löschen und deine Daten unter „Konto“ als Datei herunterladen.</p>
+
+<h2>5. Einträge von Raumgebern</h2>
+<p>Für einen Eintrag verarbeiten wir Angaben zum Ort und zu den Räumen, die Kontaktwege für Raumanfragen, eine E-Mail-Adresse
+  zur Verwaltung des Eintrags (nicht sichtbar) sowie Zeitpunkt und Wortlaut der Zustimmung. Die Kontaktwege sehen nur
+  freigeschaltete Gruppen. Wir bitten ausdrücklich um Funktionsadressen statt persönlicher Kontaktdaten.
+  Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO), die du jederzeit über deinen Bearbeitungslink widerrufen kannst.</p>
+<p><strong>Löschung:</strong> Unbestätigte Meldungen nach 14 Tagen. Nach dem Entfernen eines Eintrags bleiben nur Name und Adresse
+  des Ortes als Sperrvermerk gespeichert, damit wir nicht erneut anfragen.</p>
+
+<h2>6. Recherchierte Orte und Listungsanfragen</h2>
+<p>Wir sammeln Orte aus öffentlich zugänglichen Quellen (z. B. Webseiten der Träger, OpenStreetMap). Wir erfassen dabei nur
+  institutionelle Angaben wie Name, Adresse, Träger und allgemeine Kontaktadresse, keine Daten von Privatpersonen.
+  Diese Daten sind nicht öffentlich. Wir nutzen sie, um einmalig (höchstens mit einer Erinnerung) anzufragen, ob der Ort
+  aufgenommen werden möchte. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Unser berechtigtes Interesse ist es, Gruppen und
+  Räume zusammenzubringen. Du kannst jederzeit widersprechen (Art. 21 DSGVO), am einfachsten über „Nicht aufnehmen“ im Anfragelink.</p>
+
+<h2 id="karte">7. Karte</h2>
+<p>Die Karte lädt erst nach deinem Klick auf „Karte anzeigen“ Kartenkacheln von der OpenStreetMap Foundation
+  (St John’s Innovation Centre, Cambridge, CB4 0WS, Vereinigtes Königreich). Dabei wird deine IP-Adresse dorthin übertragen.
+  Für das Vereinigte Königreich besteht ein Angemessenheitsbeschluss der EU-Kommission. Rechtsgrundlage ist deine Einwilligung durch den Klick
+  (Art. 6 Abs. 1 lit. a DSGVO). Datenschutz der OSMF: <a href="https://osmfoundation.org/wiki/Privacy_Policy" rel="noopener noreferrer">osmfoundation.org/wiki/Privacy_Policy</a>.</p>
+
+<h2>8. E-Mail-Versand und Hosting</h2>
+<p>[Hoster, Standort, AV-Vertrag] · [E-Mail-Anbieter, Standort, AV-Vertrag]. Wir nutzen ausschließlich Anbieter mit Sitz und Servern in der EU.</p>
+
+<h2>9. Deine Rechte</h2>
+<p>Du hast das Recht auf Auskunft (Art. 15), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung (Art. 18),
+  Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21) sowie das Recht, eine Einwilligung zu widerrufen.
+  Du kannst dich bei einer Aufsichtsbehörde beschweren, z. B. bei der Landesbeauftragten für Datenschutz und
+  Informationsfreiheit Nordrhein-Westfalen (LDI NRW), Kavalleriestraße 2–4, 40213 Düsseldorf.</p>
+</article>
+{% endblock %}

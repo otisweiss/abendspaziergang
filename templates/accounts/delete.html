@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Konto löschen{% endblock %}
+{% block content %}
+<h1>Konto löschen</h1>
+<p>Wir löschen dein Konto, die Angaben zur Gruppe und deine Merkliste sofort und endgültig.</p>
+<form method="post" class="narrow" novalidate>{% csrf_token %}
+  {% include "_field.html" with field=form.password %}
+  <button class="btn btn-danger" type="submit">Endgültig löschen</button>
+</form>
+{% endblock %}
