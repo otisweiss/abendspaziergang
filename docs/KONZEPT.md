@@ -81,7 +81,7 @@ keine rein privaten Feiern anzufragen.
    Ort bestätigt“ und der Quellenangabe. Übernommen werden nur Angaben, die die Einrichtung
    selbst veröffentlicht, ohne Namen von Mitarbeitenden. Für private Orte ist dieser Status
    technisch gesperrt. Stimmt der Ort später zu, wird er *gelistet*. Widerspricht er, wird der
-   Eintrag sofort entfernt. Erster Bestand: `data/orte_koeln.json` (18 sichtbar, 7 intern).
+   Eintrag sofort entfernt. Erster Bestand: `data/orte_koeln.json` (38 Orte: 22 sichtbar, 16 intern). Dazu gehören Brauhäuser und Kneipen, die selbst Gruppenräume oder Gruppenreservierungen bewerben (Stammtische), sowie kirchliche Tagungshäuser. Was für städtische Räume nötig ist, steht in [STAEDTISCHE-RAEUME.md](STAEDTISCHE-RAEUME.md).
 1. **Sammeln (Phase 1):** Die Redaktion legt Orte als *recherchiert* an. Dazu gibt es einen
    OSM-Import (OpenStreetMap: Gemeinschaftszentren, soziale Zentren, Bibliotheken,
    Kulturzentren, Jugendzentren) und einen CSV-Import für Handrecherche. Gesammelt werden
@@ -248,7 +248,7 @@ Ausführlich in [DATENSCHUTZ.md](DATENSCHUTZ.md). Zum Betrieb als Privatperson s
 |---|---|---|
 | 0 | Recherche, Konzept, Datenschutzkonzept | ✅ in diesem Repo |
 | 1 | Grundgerüst: Datenmodell, Verwaltung, Importe (OSM/CSV), Suche mit Filtern, Registrierung mit Double-Opt-in, Meldeformular, Bearbeitungslink, Listungsanfragen, Löschfristen, Tests, Docker | ✅ in diesem Repo |
-| 1b | Nicht öffentliche Listung, zentrale Anfrage-Adresse, eine Anfrage pro Termin, Reihenanfrage, Aktualitätsabfrage, Orte aus öffentlichen Quellen, Barrierefreiheit, Einfache Sprache, Anleitungen, FAQ, Responsivität, erster echter Bestand (25 Kölner Orte) | ✅ in diesem Repo |
+| 1b | Nicht öffentliche Listung, zentrale Anfrage-Adresse, eine Anfrage pro Termin, Reihenanfrage, Aktualitätsabfrage, Orte aus öffentlichen Quellen, Barrierefreiheit, Einfache Sprache, Anleitungen, FAQ, Responsivität, erster echter Bestand (38 Kölner Orte), Hilfe zu städtischen Räumen | ✅ in diesem Repo |
 | 2 | Auf dem Server installieren, SMTP einrichten, OSM-Import laufen lassen, weitere Handrecherche (Pfarrsäle, Stadtteilbibliotheken, Jugendzentren, Sozialraumkoordination) | ⏳ nach Anbindung des Servers |
 | 3 | Rechtliche Prüfung (Datenschutzerklärung, Impressum, Nutzungsbedingungen), Kooperationspartner ansprechen, erste Anfragewelle (z. B. 50 Orte) | offen |
 | 4 | Start mit Pilot-Gruppen, Rückmeldungen einholen | offen |

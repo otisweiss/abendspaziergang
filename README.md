@@ -13,9 +13,13 @@ Betrieben von einem Verein, der alle Gruppen vor der Freischaltung prüft.
 
 ## Funktionen
 
-- **Echter Startbestand:** 25 Kölner Orte aus öffentlichen Quellen (`data/orte_koeln.json`),
-  davon 18 sofort sichtbar mit dem Hinweis „Noch nicht vom Ort bestätigt“ (alle Bürgerhäuser
-  und Bürgerzentren der Stadt Köln u. a.), 7 intern zum Anfragen.
+- **Echter Startbestand:** 38 Kölner Orte aus öffentlichen Quellen (`data/orte_koeln.json`),
+  davon 22 sofort sichtbar mit dem Hinweis „Noch nicht vom Ort bestätigt“ (alle Bürgerhäuser
+  und Bürgerzentren der Stadt Köln, Kulturorte, Brauhäuser mit Gruppenräumen, eine Kegelbahn
+  mit eigenem Raum, das Maternushaus), 16 intern zum Anfragen (u. a. Kegelbahn-Kneipen,
+  Nachbarschaftstreffs).
+- **Hilfe „Städtische Räume nutzen“:** Bürgerhäuser, Schulräume (oft kostenlos für Vereine),
+  Turnhallen – ausgewertet aus den Ordnungen der Stadt Köln ([Details](docs/STAEDTISCHE-RAEUME.md)).
 - **Nicht öffentliche Listung:** z. B. für private Räume oder Wohnzimmerkonzerte. Gruppen sehen
   nur Stadtteil und Raumangaben. Der Raumgeber sagt per Mail zu oder ab. Erst dann sieht die
   Gruppe Name, Adresse und Kontakt.

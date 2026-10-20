@@ -394,7 +394,7 @@ class AccessibilityTests(TestCase):
     """Grundlegende Prüfungen: Sprache, Überschrift, Beschriftungen, Sprunglink."""
 
     PUBLIC_PAGES = ["pages:home", "pages:help", "pages:help_groups", "pages:help_providers", "pages:faq", "pages:easy",
-                    "pages:accessibility", "pages:privacy", "pages:imprint", "pages:terms", "venues:submit",
+                    "pages:accessibility", "pages:help_city", "pages:privacy", "pages:imprint", "pages:terms", "venues:submit",
                     "accounts:register", "accounts:login"]
 
     def test_pages_have_structure(self):

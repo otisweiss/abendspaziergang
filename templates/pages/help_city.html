@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Städtische Räume nutzen{% endblock %}
+{% block content %}
+<article class="prose">
+<p><a href="{% url 'pages:help' %}">← Hilfe</a></p>
+<h1>Städtische Räume nutzen</h1>
+<p class="lead">Die Stadt Köln vermietet Räume in Bürgerhäusern, Bürgerzentren und Schulen auch an Vereine und Gruppen.
+  Hier steht, was ihr dafür braucht. Stand: Oktober 2026. Bitte fragt vor Ort nach aktuellen Preisen.</p>
+<nav aria-label="Inhalt" class="toc"><ol>
+  <li><a href="#buergerhaeuser">Bürgerhäuser und Bürgerzentren</a></li>
+  <li><a href="#schulen">Schulräume</a></li>
+  <li><a href="#sport">Turnhallen und Sportstätten</a></li>
+  <li><a href="#checkliste">Checkliste für eure Anfrage</a></li>
+</ol></nav>
+
+<h2 id="buergerhaeuser">1. Bürgerhäuser und Bürgerzentren</h2>
+<p>Die Stadt betreibt 4 Häuser selbst: Bürgerhaus Kalk, Bürgerhaus Stollwerck, Bürgerzentrum Chorweiler und Bürgerzentrum Deutz.
+  Die anderen 10 Häuser haben freie Träger, zum Beispiel Vereine. Dort gelten eigene Regeln. Alle findet ihr in der <a href="{% url 'venues:search' %}">Suche</a>.</p>
+<p>Für die städtischen Häuser gilt die <a href="https://www.stadt-koeln.de/mediaasset/content/satzungen/benutzungs-_und_entgeltordnung_f%C3%BCr_die_vergabe_von_multifunktionalen_r%C3%A4umen_in_b%C3%BCrgerh%C3%A4usern_und_b%C3%BCrgerzentren_der_stadt_k%C3%B6ln.pdf" rel="noopener noreferrer">Benutzungs- und Entgeltordnung</a> (seit 2014):</p>
+<ul>
+  <li><strong>Wer darf mieten?</strong> Alle Personen und Vereine, zum Beispiel für gemeinnützige, kulturelle oder bildende Zwecke. Einen Anspruch auf einen Raum gibt es nicht.</li>
+  <li><strong>Antrag:</strong> schriftlich, zum Beispiel per E-Mail. Darin muss stehen: Name und Adresse, wer die Veranstaltung leitet, Zweck, Raum, Termin mit Auf- und Abbau, erwartete Personenzahl und ob ihr Eintritt nehmt.</li>
+  <li><strong>Alter:</strong> Wer den Antrag stellt, muss volljährig sein. Für einen Verein muss die Person den Verein vertreten dürfen, zum Beispiel ein Vorstandsmitglied.</li>
+  <li><strong>Vertrag:</strong> Ihr bekommt einen schriftlichen Mietvertrag.</li>
+  <li><strong>Versicherung:</strong> Die Stadt erwartet eine Haftpflichtversicherung, bei Schlüsselübergabe auch eine Schlüsselversicherung. Sie kann den Nachweis oder eine Kaution verlangen.</li>
+  <li><strong>Kosten:</strong> Es gibt feste Preise je Haus. Die Leitung des Hauses kann sie im Einzelfall senken oder erlassen, zum Beispiel für gemeinnützige Vereine. Fragt danach. Mit Eintritt oder gewerblichem Zweck kann es teurer werden.</li>
+  <li><strong>Absage:</strong> Bis 6 Monate vorher kostenlos. Danach steigt die Gebühr schrittweise: 20 % ab 4 Monaten vorher, bis 100 % bei weniger als 4 Wochen.</li>
+  <li><strong>Vor Ort:</strong> Eine verantwortliche Person muss die ganze Zeit dabei sein. Es gilt Rauchverbot, Einweggeschirr ist nicht erlaubt. Ihr hinterlasst den Raum sauber.</li>
+  <li><strong>Essen und Getränke verkaufen:</strong> nur mit Erlaubnis des Hauses und, falls nötig, einer Gestattung nach dem Gaststättenrecht.</li>
+</ul>
+
+<h2 id="schulen">2. Schulräume</h2>
+<p>Seit Oktober 2024 gilt die <a href="https://www.stadt-koeln.de/mediaasset/content/satzungen/nutzungs-_und_entgeltordnung_schulraeumen_zu_nichtschulischen_zwecken_2024-12-06.pdf" rel="noopener noreferrer">Nutzungs- und Entgeltordnung für Schulräume (NEO)</a>
+  mit den <a href="https://cdn.stadt-koeln.de/mediaasset/content/satzungen/allgemeine_nutzungsbedingungen_schulraeume_zu_nichtschulischen_zwecken_2024-12-06.pdf" rel="noopener noreferrer">Allgemeinen Nutzungsbedingungen</a>.</p>
+<ul>
+  <li><strong>Wofür?</strong> Für Schulungen und Übungen, Kultur, gemeinnützige Zwecke und andere öffentliche Interessen.</li>
+  <li><strong>Welche Räume?</strong> Klassenräume, Aulen und Pädagogische Zentren, Schulhöfe. Fachräume wie Musikräume nur, wenn eine fachkundige Person leitet. Labore, Informatikräume und Bibliotheken nicht.</li>
+  <li><strong>Kostenlos für:</strong> gemeinnützig anerkannte Organisationen, anerkannte Jugendverbände sowie örtliche kulturelle, sportliche und bürgerschaftliche Vereine (auch Karnevalsvereine) in einer Schule ihres Stadtteils. Das gilt für Klassenräume, nicht für Aulen und Schulhöfe.</li>
+  <li><strong>Ermäßigt:</strong> Diese Gruppen zahlen für Aula oder Pädagogisches Zentrum pauschal 79 € pro Tag (plus 396 € Kaution).</li>
+  <li><strong>Sonst:</strong> Ein Klassenraum kostet zum Beispiel ab 18 Uhr 36 € für 2 Stunden. Bei mindestens 8 Terminen in Folge wird es günstiger. Am Wochenende kommen 30 % dazu, im Winter weitere 30 % für Heizung, auch bei kostenloser Nutzung.</li>
+  <li><strong>Wichtig:</strong> Der Schulbetrieb hat immer Vorrang. Eine verantwortliche Person meldet sich vor der Nutzung beim Hausmeister.</li>
+  <li><strong>Wo anfragen?</strong> Am besten direkt bei der Schule im eigenen Stadtteil. Sie nennt euch die zuständige Stelle bei der Stadt (Amt für Schulentwicklung).</li>
+</ul>
+
+<h2 id="sport">3. Turnhallen und Sportstätten</h2>
+<p>Für Turnhallen gelten eigene Regeln: die <a href="https://www.stadt-koeln.de/mediaasset/content/satzungen/vergabegrundsaetze-nutzungszeiten-sportstaetten-schulschwimmbaeder_20250701.pdf" rel="noopener noreferrer">Vergabegrundsätze für Sportstätten</a> (Stand Juli 2025).
+  Hallenzeiten gibt es grundsätzlich nur für Sport, ausnahmsweise für Karnevals-Brauchtum. Zuständig ist die Sportverwaltung der Stadt Köln.
+  Für Tanzgruppen oder Bewegungsangebote kann das passen. Für Treffen, Proben oder Infoabende sind Schulräume oder Bürgerhäuser besser.</p>
+
+<h2 id="checkliste">4. Checkliste für eure Anfrage</h2>
+<ul class="steps-list">
+  <li>Wer seid ihr? Name der Gruppe, Adresse, verantwortliche Person (volljährig)</li>
+  <li>Was habt ihr vor? Zweck, Personenzahl, Eintritt ja oder nein</li>
+  <li>Wann? Datum, Uhrzeit, Auf- und Abbau, einmalig oder regelmäßig</li>
+  <li>Seid ihr gemeinnützig? Dann Freistellungsbescheid des Finanzamts bereithalten und nach Ermäßigung fragen.</li>
+  <li>Habt ihr eine Haftpflichtversicherung? Vereinshaftpflicht oder Veranstalter-Haftpflicht, bei Schlüsselübergabe auch Schlüsselversicherung</li>
+  <li>Früh anfragen: für regelmäßige Termine 2 Monate vorher, wegen der Absagefristen lieber noch früher</li>
+</ul>
+<p class="help">Diese Seite ist eine Zusammenfassung und keine Rechtsberatung. Verbindlich sind die verlinkten Ordnungen und euer Mietvertrag.</p>
+</article>
+{% endblock %}

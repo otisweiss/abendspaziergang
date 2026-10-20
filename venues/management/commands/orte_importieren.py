@@ -13,7 +13,7 @@ from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from venues.models import Equipment, Purpose, Room, Venue
+from venues.models import Equipment, Purpose, Room, TimeSlot, Venue
 
 VENUE_FIELDS = [
     "name", "operator", "operator_type", "description", "website", "street", "postcode", "quarter", "district",
@@ -58,8 +58,9 @@ class Command(BaseCommand):
                 for r in entry.get("rooms", []):
                     room = Room.objects.create(
                         venue=venue, name=r["name"], capacity=r.get("capacity"), area_sqm=r.get("area_sqm"),
-                        cost=r.get("cost", Room.Cost.ON_REQUEST),
+                        cost=r.get("cost", Room.Cost.ON_REQUEST), price_notes=r.get("price_notes", ""),
                     )
+                    TimeSlot.objects.bulk_create([TimeSlot(room=room, day=day, period=period) for day, period in r.get("slots", [])])
                     room.equipment.set(Equipment.objects.filter(slug__in=r.get("equipment", [])))
                     room.purposes.set(Purpose.objects.filter(slug__in=r.get("purposes", [])))
         self.stdout.write(self.style.SUCCESS(f"{created} Orte importiert, {skipped} übersprungen."))
