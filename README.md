@@ -17,9 +17,11 @@ Betrieben von einem Verein, der alle Gruppen vor der Freischaltung prüft.
   davon 18 sofort sichtbar mit dem Hinweis „Noch nicht vom Ort bestätigt“ (alle Bürgerhäuser
   und Bürgerzentren der Stadt Köln u. a.), 7 intern zum Anfragen.
 - **Nicht öffentliche Listung:** z. B. für private Räume oder Wohnzimmerkonzerte. Gruppen sehen
-  nur Stadtteil und Raumangaben und fragen einzeln oder per **Sammelanfrage** an alle passenden
-  Orte eines Stadtteils. Der Raumgeber sagt per Mail zu oder ab. Erst dann sieht die Gruppe
-  Name, Adresse und Kontakt.
+  nur Stadtteil und Raumangaben. Der Raumgeber sagt per Mail zu oder ab. Erst dann sieht die
+  Gruppe Name, Adresse und Kontakt.
+- **Raumanfragen über eine zentrale Adresse:** mit der Antwort-Adresse der Gruppe als Reply-To.
+  **Eine Anfrage pro Termin und Gruppe**; der Termin wird erst nach Absage, Rückzug oder Ablauf
+  wieder frei. Die **Reihenanfrage** fragt bis zu 5 passende Orte nacheinander an, nie gleichzeitig.
 - **Aktualitätsabfrage:** automatische Mail alle 6 Monate, Erinnerung, Pause ohne Antwort.
 - **Barrierefrei, Einfache Sprache, responsiv:** WCAG 2.1 AA als Ziel, Fehlerübersicht,
   Tastaturbedienung, eigene Seite in Einfacher Sprache, Anleitungen, FAQ, mobil zuerst.

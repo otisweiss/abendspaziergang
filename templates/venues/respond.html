@@ -2,6 +2,8 @@
 {% block title %}Nutzungsanfrage{% endblock %}
 {% block content %}
 <h1>Eine Gruppe möchte euren Raum nutzen</h1>
+<p class="help">Ihr könnt hier antworten oder einfach direkt auf unsere E-Mail antworten. Dann geht eure Antwort an die Gruppe.
+  Eine Antwort hier hilft uns, damit die Gruppe schnell weitersuchen kann, falls es nicht passt.</p>
 <p class="lead">Die Anfrage ist für <strong>{{ item.venue.name }}</strong>{% if item.room %}, Raum „{{ item.room.name }}“{% endif %}.</p>
 <section class="card narrow" aria-labelledby="wer">
   <h2 id="wer">Die Anfrage</h2>
@@ -12,13 +14,19 @@
     <dt>Personen</dt><dd>{{ item.persons }}</dd>
     {% if item.message %}<dt>Nachricht</dt><dd>{{ item.message|linebreaksbr }}</dd>{% endif %}
   </dl>
+  <p class="help">Antwort-Adresse der Gruppe: {{ item.reply_email }}</p>
   <p class="help">Die Gruppe wurde von {{ OPERATOR_NAME }} geprüft. Sie hat zugesagt, keine rein privaten Feiern anzufragen.</p>
 </section>
 <section class="card narrow" aria-labelledby="antwort">
   <h2 id="antwort">Eure Antwort</h2>
+  {% if item.venue.is_public %}
+  <p><strong>Wenn ihr zusagt:</strong> Die Gruppe meldet sich bei euch, um alles Weitere abzusprechen. Mit der Zusage ist noch nichts gebucht.</p>
+  <p><strong>Wenn ihr absagt:</strong> Die Gruppe kann sofort woanders anfragen.</p>
+  {% else %}
   <p><strong>Wenn ihr zusagt:</strong> Diese Gruppe sieht Name, Adresse und eure Kontaktangaben. Sie meldet sich bei euch, um alles Weitere abzusprechen.
     Mit der Zusage ist noch nichts gebucht.</p>
   <p><strong>Wenn ihr absagt:</strong> Die Gruppe erfährt nur, dass es diesmal nicht passt. Sie sieht keine Angaben zu euch.</p>
+  {% endif %}
   <form method="post" novalidate>{% csrf_token %}
     {% include "_field.html" with field=form.note %}
     <div class="button-row">

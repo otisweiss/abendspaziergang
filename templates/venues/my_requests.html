@@ -2,30 +2,45 @@
 {% block title %}Meine Anfragen{% endblock %}
 {% block content %}
 <h1>Meine Anfragen</h1>
-<p class="help">Hier seht ihr eure Anfragen an nicht öffentliche Orte. Bei einer Zusage seht ihr alle Angaben zum Ort.</p>
+<p class="help">Pro Termin läuft immer nur eine Anfrage. Hat euch ein Ort direkt per E-Mail geantwortet, tragt die Antwort hier ein.
+  Nach einer Absage oder wenn ihr zurückzieht, ist der Termin für eine neue Anfrage frei.</p>
 {% if items %}
 <div class="table-scroll">
 <table class="data-table">
   <caption class="sr">Liste eurer Anfragen</caption>
-  <thead><tr><th scope="col">Ort</th><th scope="col">Wofür und wann</th><th scope="col">Gesendet</th><th scope="col">Status</th><th scope="col"><span class="sr">Aktion</span></th></tr></thead>
+  <thead><tr><th scope="col">Ort</th><th scope="col">Termin</th><th scope="col">Status</th><th scope="col">Aktionen</th></tr></thead>
   <tbody>
   {% for item in items %}
     <tr>
-      <td data-label="Ort">{% if item.status == "zugesagt" %}<a href="{{ item.venue.get_absolute_url }}">{{ item.venue.name }}</a>{% else %}<a href="{{ item.venue.get_absolute_url }}">{{ item.venue.display_title }}</a>{% endif %}
-        {% if item.batch %}<br><span class="help">Sammelanfrage</span>{% endif %}</td>
-      <td data-label="Wofür und wann">{{ item.occasion }}<br><span class="help">{{ item.dates }} · {{ item.persons }} Personen</span></td>
-      <td data-label="Gesendet">{{ item.created_at|date:"d.m.Y" }}</td>
+      <td data-label="Ort"><a href="{{ item.venue.get_absolute_url }}">{% if item.venue.is_public or item.confirmed_by_host %}{{ item.venue.name }}{% else %}{{ item.venue.display_title }}{% endif %}</a>
+        {% if item.batch %}<br><span class="help">Reihenanfrage, Platz {{ item.queue_position }}</span>{% endif %}</td>
+      <td data-label="Termin">{{ item.occasion }}<br><span class="help">{{ item.dates }} · {{ item.persons }} Personen</span></td>
       <td data-label="Status"><span class="badge badge-req-{{ item.status }}">{{ item.get_status_display }}</span>
         {% if item.response_note %}<br><span class="help">„{{ item.response_note }}“</span>{% endif %}</td>
-      <td data-label="Aktion">{% if item.status == "offen" %}
-        <form method="post" action="{% url 'venues:withdraw_request' item.pk %}">{% csrf_token %}<button class="linklike" type="submit">Zurückziehen</button></form>
-      {% endif %}</td>
+      <td data-label="Aktionen">
+        {% if item.status == "offen" %}
+          <form method="post" action="{% url 'venues:request_action' item.pk %}" class="action-row">{% csrf_token %}
+            <button class="linklike" name="action" value="abgesagt" type="submit">Absage per E-Mail erhalten</button>
+            <button class="linklike" name="action" value="zugesagt" type="submit">Zusage per E-Mail erhalten</button>
+            <button class="linklike" name="action" value="withdraw" type="submit">Zurückziehen</button>
+          </form>
+        {% elif item.status == "eingereiht" or item.status == "zugesagt" %}
+          <form method="post" action="{% url 'venues:request_action' item.pk %}" class="action-row">{% csrf_token %}
+            <button class="linklike" name="action" value="withdraw" type="submit">{% if item.status == "zugesagt" %}Raum doch nicht nötig{% else %}Aus der Reihe nehmen{% endif %}</button>
+          </form>
+        {% endif %}
+        {% if item.batch and item.queue_position == 1 %}
+          <form method="post" action="{% url 'venues:request_action' item.pk %}">{% csrf_token %}
+            <button class="linklike" name="action" value="end_series" type="submit">Ganze Reihe beenden</button>
+          </form>
+        {% endif %}
+      </td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
 {% else %}
-  <p>Ihr habt noch keine Anfragen gestellt. Nicht öffentliche Orte findet ihr in der <a href="{% url 'venues:search' %}?visibility=auf_anfrage">Suche</a>.</p>
+  <p>Ihr habt noch keine Anfragen gestellt. Orte findet ihr in der <a href="{% url 'venues:search' %}">Suche</a>.</p>
 {% endif %}
 {% endblock %}

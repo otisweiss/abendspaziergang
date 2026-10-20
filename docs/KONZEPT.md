@@ -45,7 +45,7 @@ nicht gefunden. Berlin (engagiertes.berlin) zeigt, dass das Modell funktioniert.
 | Rolle | Wer | Darf |
 |---|---|---|
 | **Öffentlichkeit** | alle | Startseite, Erklärung, Statistik (Anzahl Orte je Stadtbezirk), Formular „Ort melden“, Datenschutz, Impressum |
-| **Gruppe / Verein** (registriert, vom Betreiberverein geprüft) | Chöre, Vereine, Initiativen, Selbsthilfegruppen, nicht kommerzielle Gruppen mit sozialem Zweck | Orte suchen und filtern, Kontaktwege öffentlicher Orte sehen, nicht öffentliche Orte einzeln oder gesammelt anfragen, Merkliste, eigene Anfragen verfolgen |
+| **Gruppe / Verein** (registriert, vom Betreiberverein geprüft) | Chöre, Vereine, Initiativen, Selbsthilfegruppen, nicht kommerzielle Gruppen mit sozialem Zweck | Orte suchen und filtern, Kontaktwege öffentlicher Orte sehen, Orte über die zentrale Anfrage-Adresse anfragen (eine Anfrage pro Termin, Reihenanfrage nacheinander), Merkliste, eigene Anfragen verfolgen |
 | **Raumgeber** | Träger, Vereine, Kirchengemeinden, Gastronomie, Unternehmen, Privatpersonen | Eigenen Eintrag über einen geheimen Bearbeitungslink anlegen, ändern, pausieren und löschen. Öffentlich oder nicht öffentlich listen. Nutzungsanfragen per Mail zusagen oder absagen. Ein Konto ist nicht nötig. |
 | **Redaktion** | Team des Betreibervereins | Gruppen prüfen und freischalten, Orte recherchieren und importieren, Listungsanfragen verschicken, Einträge prüfen. Nachrichten zwischen Gruppen und Raumgebern sieht die Redaktion nicht. |
 
@@ -110,15 +110,28 @@ keine rein privaten Feiern anzufragen.
 ```
  Gruppe sieht: Titel, Stadtteil, Größe,       Raumgeber bekommt E-Mail      Zusage → nur DIESE Gruppe sieht
  Ausstattung, Zwecke, Kosten, Zeiten     ──▶  mit Anfrage und Link    ──▶  Name, Adresse, Kontakt
- (kein Name, keine Adresse, keine Karte)      (Adresse bleibt verborgen)    Absage/14 Tage ohne Antwort → nichts
+ (kein Name, keine Adresse, keine Karte)      (Adresse bleibt verborgen)    Absage/10 Tage ohne Antwort → nichts
 ```
 
 - **Einzelanfrage:** Die Gruppe fragt einen nicht öffentlichen Ort über ein Formular an
   (Anlass, Termin, Personenzahl, Nachricht, Antwort-Adresse).
-- **Sammelanfrage:** Die Gruppe wählt einen Stadtteil oder Bezirk und weitere Filter (z. B.
-  „ab 20 Personen, mit Klavier, abends“). Die Anfrage geht an alle passenden nicht
-  öffentlichen Orte, höchstens an 10. Jeder Raumgeber bekommt eine eigene Mail und sieht nur
-  seine Anfrage. Die Gruppe erfährt nur die Anzahl, bis jemand zusagt.
+- **Reihenanfrage:** Die Gruppe wählt einen Stadtteil oder Bezirk und weitere Filter (z. B.
+  „ab 20 Personen, mit Klavier, abends“) und bis zu 5 passende Orte. Sie werden
+  **nacheinander** angefragt: Nur bei Absage, Rückzug oder Ablauf (10 Tage) bekommt der nächste
+  Ort die Anfrage. Bei einer Zusage entfallen die übrigen.
+
+### Raumanfragen: zentrale Adresse, eine Anfrage pro Termin
+
+- **Zentraler Versand:** Alle Anfragen (an öffentliche und nicht öffentliche Orte) gehen von
+  `REQUEST_FROM_EMAIL` raus, mit der Antwort-Adresse der Gruppe als Reply-To. Raumgeber
+  antworten per „Antworten“ direkt oder per Klick auf Zusagen/Absagen.
+- **Eine Anfrage pro Termin:** Anfragen haben Datum, Uhrzeit von–bis und optional „wöchentlich“.
+  Pro Gruppe darf für sich überschneidende Termine nur eine Anfrage offen, eingereiht oder
+  zugesagt sein. Wieder frei wird der Termin erst nach Absage (über den Link oder von der
+  Gruppe eingetragen), Rückzug oder Ablauf. Das verhindert Massenanfragen.
+- **Antworten außerhalb der Plattform:** Antwortet ein Ort direkt per Mail, trägt die Gruppe
+  Zusage oder Absage unter „Meine Anfragen“ ein. Eine so eingetragene Zusage schaltet bei nicht
+  öffentlichen Orten keine Details frei.
 - **Schutz:** Die Suche findet nicht öffentliche Orte nicht über Name oder Straße. Höchstens 5
   Anfragen pro Gruppe und Tag. Anfragen werden nach 12 Monaten gelöscht, damit endet auch der
   Zugang. Die Redaktion sieht nur Metadaten, nicht die Nachrichten.
@@ -156,8 +169,9 @@ Gruppe (GroupProfile, an ein Benutzerkonto gebunden)
  └─ Status: offen · freigeschaltet · gesperrt
 Listungsanfrage (ListingRequest): Ort, Empfänger-Adresse, gesendet am, Token-Hash, Ablauf, Ergebnis
 Nutzungsanfrage (UsageRequest): Ort, Gruppe, Raum, Anlass, Termin, Personen, Nachricht,
-  Antwort-Adresse, Sammelanfrage-Kennung, Status (offen · zugesagt · abgesagt · abgelaufen ·
-  zurückgezogen), Token-Hash, Ablauf
+  Datum, Uhrzeit von–bis, wöchentlich, Antwort-Adresse, Reihenanfrage-Kennung und Platz,
+  Status (eingereiht · offen · zugesagt · abgesagt · abgelaufen · zurückgezogen · entfallen),
+  Zusage über Link (ja/nein), Token-Hash, Ablauf
 Merkliste: Gruppe ↔ Ort
 ```
 
@@ -234,7 +248,7 @@ Ausführlich in [DATENSCHUTZ.md](DATENSCHUTZ.md). Zum Betrieb als Privatperson s
 |---|---|---|
 | 0 | Recherche, Konzept, Datenschutzkonzept | ✅ in diesem Repo |
 | 1 | Grundgerüst: Datenmodell, Verwaltung, Importe (OSM/CSV), Suche mit Filtern, Registrierung mit Double-Opt-in, Meldeformular, Bearbeitungslink, Listungsanfragen, Löschfristen, Tests, Docker | ✅ in diesem Repo |
-| 1b | Nicht öffentliche Listung mit Einzel- und Sammelanfrage, Aktualitätsabfrage, Orte aus öffentlichen Quellen, Barrierefreiheit, Einfache Sprache, Anleitungen, FAQ, Responsivität, erster echter Bestand (25 Kölner Orte) | ✅ in diesem Repo |
+| 1b | Nicht öffentliche Listung, zentrale Anfrage-Adresse, eine Anfrage pro Termin, Reihenanfrage, Aktualitätsabfrage, Orte aus öffentlichen Quellen, Barrierefreiheit, Einfache Sprache, Anleitungen, FAQ, Responsivität, erster echter Bestand (25 Kölner Orte) | ✅ in diesem Repo |
 | 2 | Auf dem Server installieren, SMTP einrichten, OSM-Import laufen lassen, weitere Handrecherche (Pfarrsäle, Stadtteilbibliotheken, Jugendzentren, Sozialraumkoordination) | ⏳ nach Anbindung des Servers |
 | 3 | Rechtliche Prüfung (Datenschutzerklärung, Impressum, Nutzungsbedingungen), Kooperationspartner ansprechen, erste Anfragewelle (z. B. 50 Orte) | offen |
 | 4 | Start mit Pilot-Gruppen, Rückmeldungen einholen | offen |

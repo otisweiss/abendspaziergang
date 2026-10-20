@@ -24,7 +24,7 @@
 | 4 | Einträge von Raumgebern | Ansprechpartner der Orte | Angaben zum Ort, Kontaktwege, Verwaltungs-E-Mail, Zustimmung | Art. 6 Abs. 1 lit. a | freigeschaltete Gruppen (nur Kontaktwege) | Unbestätigt 14 Tage; bei Entfernen bleibt nur ein Sperrvermerk |
 | 5 | Recherche und Listungsanfrage | Institutionen (Funktionsadressen) | Name, Adresse, Träger, allgemeine Kontaktadresse, Quelle | Art. 6 Abs. 1 lit. f (Interessenabwägung, siehe 3.) | E-Mail-Anbieter (AV) | Bei Ablehnung Sperrvermerk; Link nach 90 Tagen ungültig |
 | 5a | Orte aus öffentlichen Quellen (sichtbar, unbestätigt) | Einrichtungen, die selbst öffentlich Räume anbieten | Name, Adresse, Webseite, allgemeine Kontaktadresse, Raumangaben, Quelle – keine Namen von Mitarbeitenden | Art. 6 Abs. 1 lit. f | freigeschaltete Gruppen | Bei Widerspruch sofort; Sperrvermerk |
-| 5b | Nutzungsanfragen an nicht öffentliche Orte | Gruppen, Raumgeber | Anlass, Termin, Personenzahl, Nachricht, Antwort-Adresse, Gruppenname, Status | Art. 6 Abs. 1 lit. b, Einwilligung beim Absenden | Raumgeber (per E-Mail); nach Zusage sieht die Gruppe die Kontaktangaben des Ortes | 12 Monate nach Erstellung; Link nach Antwort oder 14 Tagen ungültig |
+| 5b | Raumanfragen über die zentrale Anfrage-Adresse | Gruppen, Raumgeber | Anlass, Datum und Uhrzeit, Personenzahl, Nachricht, Antwort-Adresse (als Reply-To), Gruppenname, Status, Platz in einer Reihenanfrage | Art. 6 Abs. 1 lit. b, Einwilligung beim Absenden | Raumgeber (per E-Mail); bei nicht öffentlichen Orten nach Zusage die Kontaktangaben an die Gruppe | 12 Monate nach Erstellung; Link nach Antwort oder 10 Tagen ungültig |
 | 5c | Aktualitätsabfrage | Raumgeber | Zeitpunkte von Abfrage, Erinnerung, Bestätigung | Art. 6 Abs. 1 lit. f (aktuelle Daten, Art. 5 Abs. 1 lit. d) | E-Mail-Anbieter (AV) | mit dem Eintrag |
 | 6 | Kartenanzeige | Besucher (nach Klick) | IP-Adresse an die OSMF | Art. 6 Abs. 1 lit. a | OpenStreetMap Foundation (UK, Angemessenheitsbeschluss) | bei OSMF |
 
@@ -50,7 +50,7 @@
   Nachrichten in Nutzungsanfragen sieht die Redaktion nicht (nur Metadaten).
 - **Schutz privater Adressen:** Nicht öffentliche Orte erscheinen ohne Name, Straße und
   Kartenpunkt. Die Volltextsuche durchsucht deren Name und Straße nicht. Details sieht nur eine
-  Gruppe mit Zusage. Sammelanfragen erreichen höchstens 10 Orte, pro Gruppe gibt es höchstens 5
+  Gruppe mit Zusage. Pro Gruppe und Termin läuft nur eine Anfrage, Reihenanfragen fragen höchstens 5 Orte nacheinander an, pro Gruppe gibt es höchstens 5
   Anfragen am Tag.
 - **Weitergabe:** Nur über TLS. Keine Drittanbieter-Skripte (CSP `default-src 'self'`).
 - **Eingabekontrolle:** Zustimmungen werden mit Zeitpunkt und Wortlaut gespeichert, dazu ein

@@ -7,6 +7,7 @@ Anfrage: {{ req.occasion }} ({{ req.dates }})
 Nachricht vom Raumgeber:
 „{{ req.response_note }}“
 {% endif %}
+Der Termin ist für euch wieder frei.{% if req.batch %} Läuft eine Reihenanfrage, fragen wir automatisch den nächsten Ort an.{% endif %}
 In der Suche findet ihr weitere Räume:
 {{ SITE_URL }}/suche/
 

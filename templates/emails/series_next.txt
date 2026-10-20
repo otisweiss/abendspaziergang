@@ -1,0 +1,14 @@
+Hallo,
+
+der vorige Ort hat abgesagt oder nicht rechtzeitig geantwortet.
+Wir haben eure Anfrage deshalb an den nächsten Ort in eurer Reihe geschickt.
+
+Anfrage:  {{ req.occasion }}
+Termin:   {{ req.dates }}
+Platz in der Reihe: {{ req.queue_position }}
+
+Den Stand seht ihr unter „Meine Anfragen“:
+{{ SITE_URL }}/anfragen/
+
+Viele Grüße
+{{ SITE_NAME }}

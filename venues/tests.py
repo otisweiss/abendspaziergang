@@ -11,7 +11,7 @@ from accounts.models import GroupProfile, User
 
 from .models import Equipment, ListingRequest, Purpose, Room, TimeSlot, UsageRequest, Venue
 from .search import search_venues
-from .services import ListingRequestError, run_freshness_checks, send_listing_request
+from .services import ListingRequestError, expire_usage_requests, run_freshness_checks, send_listing_request
 
 
 def make_group_user(email="chor@example.org", status=GroupProfile.Status.APPROVED):
@@ -225,6 +225,16 @@ class ImportTests(TestCase):
         self.assertTrue(venue.step_free)
 
 
+def request_data(**extra):
+    from datetime import date
+
+    data = {"occasion": "Hauskonzert", "date": (date.today() + timedelta(days=30)).isoformat(), "time_from": "19:00",
+            "time_to": "22:00", "persons": "20", "message": "Wir sind ein Chor.", "reply_email": "chor@example.org",
+            "privacy": "on"}
+    data.update(extra)
+    return data
+
+
 def make_private(name="Wohnzimmer Müller", quarter="Ehrenfeld", capacity=30, **kwargs):
     venue = make_venue(
         name, visibility=Venue.Visibility.ON_REQUEST, public_title="Großes Wohnzimmer", operator_type="privat",
@@ -242,10 +252,7 @@ class PrivateListingTests(TestCase):
         self.client.force_login(self.user)
 
     def request_data(self, **extra):
-        data = {"occasion": "Hauskonzert", "dates": "Sa 14.3., 19 Uhr", "persons": "20", "message": "Wir sind ein Chor.",
-                "reply_email": "chor@example.org", "privacy": "on"}
-        data.update(extra)
-        return data
+        return request_data(**extra)
 
     def test_details_hidden_until_accepted(self):
         page = self.client.get(reverse("venues:search")).content.decode()
@@ -281,31 +288,6 @@ class PrivateListingTests(TestCase):
         self.client.post(path, {"action": "decline"})
         self.assertNotIn("Geheimweg", self.client.get(reverse("venues:detail", args=[self.venue.pk])).content.decode())
 
-    def test_batch_request_goes_to_matching_quarter_only(self):
-        other = make_private("Atelier Schmitz", capacity=40)
-        make_private("Keller Kalk", quarter="Kalk")
-        make_private("Zu klein", capacity=5)
-        query = "quarter=Ehrenfeld&capacity=20"
-        response = self.client.post(f"{reverse('venues:batch_request')}?{query}", self.request_data())
-        self.assertRedirects(response, reverse("venues:my_requests"))
-        targets = set(UsageRequest.objects.values_list("venue__name", flat=True))
-        self.assertEqual(targets, {"Wohnzimmer Müller", "Atelier Schmitz"})
-        self.assertEqual(len({r.batch for r in UsageRequest.objects.all()}), 1)
-        self.assertEqual(len({r.token_hash for r in UsageRequest.objects.all()}), 2)
-        self.assertEqual(sorted(m.to[0] for m in mail.outbox), ["gast@example.org", "gast@example.org"])
-        self.assertTrue(other.usage_requests.exists())
-
-    def test_batch_requires_location(self):
-        response = self.client.get(reverse("venues:batch_request"), {"capacity": "10"})
-        self.assertEqual(response.status_code, 302)
-
-    @override_settings(MAX_BATCH_TARGETS=2)
-    def test_batch_is_capped(self):
-        for i in range(4):
-            make_private(f"Raum {i}")
-        self.client.post(f"{reverse('venues:batch_request')}?quarter=Ehrenfeld", self.request_data())
-        self.assertEqual(UsageRequest.objects.count(), 2)
-
     def test_hidden_venue_not_on_map(self):
         Venue.objects.filter(pk=self.venue.pk).update(latitude=50.95, longitude=6.92)
         response = self.client.get(reverse("venues:search"))
@@ -317,6 +299,14 @@ class PrivateListingTests(TestCase):
         call_command("datenschutz_bereinigen", stdout=open("/dev/null", "w"))
         self.assertEqual(UsageRequest.objects.get().status, UsageRequest.Status.EXPIRED)
         self.assertEqual(mail.outbox[-1].to, ["chor@example.org"])
+
+    def test_group_marked_acceptance_does_not_unlock_private_details(self):
+        self.client.post(reverse("venues:detail", args=[self.venue.pk]), self.request_data())
+        req = UsageRequest.objects.get()
+        self.client.post(reverse("venues:request_action", args=[req.pk]), {"action": "zugesagt"})
+        req.refresh_from_db()
+        self.assertEqual(req.status, UsageRequest.Status.ACCEPTED)
+        self.assertNotIn("Geheimweg", self.client.get(reverse("venues:detail", args=[self.venue.pk])).content.decode())
 
 
 @override_settings(SITE_URL="http://testserver", FRESHNESS_INTERVAL_DAYS=180, FRESHNESS_REMINDER_DAYS=21, FRESHNESS_PAUSE_DAYS=42)
@@ -428,3 +418,117 @@ class AccessibilityTests(TestCase):
         self.assertIn('id="fehler"', html)
         self.assertIn('href="#id_email"', html)
         self.assertIn('aria-invalid="true"', html)
+
+
+@override_settings(SITE_URL="http://testserver", REQUEST_FROM_EMAIL="Raumanfragen <anfragen@example.org>")
+class RequestRuleTests(TestCase):
+    """Zentrale Absender-Adresse, eine Anfrage pro Termin, Reihenanfragen nacheinander."""
+
+    def setUp(self):
+        self.user = make_group_user()
+        self.client.force_login(self.user)
+        self.public = make_venue("Bürgerhaus A", contact_email="raum@a.example")
+        self.public_b = make_venue("Bürgerhaus B", contact_email="raum@b.example")
+
+    def post(self, venue, **extra):
+        return self.client.post(reverse("venues:detail", args=[venue.pk]), request_data(**extra))
+
+    def test_central_sender_with_reply_to_group(self):
+        self.post(self.public, reply_email="vorstand@chor.example")
+        msg = mail.outbox[-1]
+        self.assertEqual(msg.from_email, "Raumanfragen <anfragen@example.org>")
+        self.assertEqual(msg.to, ["raum@a.example"])
+        self.assertEqual(msg.reply_to, ["vorstand@chor.example"])
+        self.assertEqual(UsageRequest.objects.get().status, UsageRequest.Status.OPEN)
+
+    def test_only_one_request_per_slot(self):
+        self.post(self.public)
+        response = self.post(self.public_b, time_from="21:00", time_to="23:00")
+        self.assertContains(response, "Pro Termin ist nur eine Anfrage")
+        self.assertEqual(UsageRequest.objects.count(), 1)
+        # Anderer Zeitraum am selben Tag ist erlaubt
+        self.post(self.public_b, time_from="10:00", time_to="12:00")
+        self.assertEqual(UsageRequest.objects.count(), 2)
+
+    def test_slot_free_after_decline_or_withdraw(self):
+        self.post(self.public)
+        first = UsageRequest.objects.get()
+        self.client.post(reverse("venues:request_action", args=[first.pk]), {"action": "abgesagt"})
+        self.post(self.public_b)
+        second = UsageRequest.objects.get(venue=self.public_b)
+        self.assertEqual(second.status, UsageRequest.Status.OPEN)
+        self.client.post(reverse("venues:request_action", args=[second.pk]), {"action": "withdraw"})
+        self.assertEqual(mail.outbox[-1].to, ["raum@b.example"], "Raumgeber erfährt vom Rückzug")
+        self.post(self.public)
+        self.assertEqual(UsageRequest.objects.filter(status=UsageRequest.Status.OPEN).count(), 1)
+
+    def test_accepted_request_blocks_slot(self):
+        self.post(self.public)
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.client.logout()
+        self.client.post(path, {"action": "accept"})
+        self.client.force_login(self.user)
+        self.assertContains(self.post(self.public_b), "Pro Termin ist nur eine Anfrage")
+
+    def test_weekly_request_blocks_same_weekday_later(self):
+        from datetime import date
+
+        start = date.today() + timedelta(days=7)
+        self.post(self.public, date=start.isoformat(), weekly="on")
+        later = start + timedelta(days=21)
+        self.assertContains(self.post(self.public_b, date=later.isoformat()), "Pro Termin ist nur eine Anfrage")
+        other_day = start + timedelta(days=22)
+        self.post(self.public_b, date=other_day.isoformat())
+        self.assertEqual(UsageRequest.objects.count(), 2)
+
+    def test_past_date_rejected(self):
+        from datetime import date
+
+        response = self.post(self.public, date=(date.today() - timedelta(days=1)).isoformat())
+        self.assertContains(response, "Datum in der Zukunft")
+        self.assertFalse(UsageRequest.objects.exists())
+
+    def series(self, *venues, **extra):
+        data = request_data(**extra)
+        data["venues"] = [v.pk for v in venues]
+        return self.client.post(f"{reverse('venues:series_request')}?district=ehrenfeld", data)
+
+    def test_series_asks_one_after_another(self):
+        c = make_private("Wohnzimmer C")
+        self.series(self.public, self.public_b, c)
+        items = list(UsageRequest.objects.order_by("queue_position"))
+        self.assertEqual([i.status for i in items], ["offen", "eingereiht", "eingereiht"])
+        self.assertEqual(len(mail.outbox), 1, "nur der erste Ort bekommt eine Anfrage")
+        # Erster Ort sagt ab → zweiter wird angefragt
+        path = extract_url(mail.outbox[-1].body).replace("http://testserver", "")
+        self.client.post(path, {"action": "decline"})
+        items = list(UsageRequest.objects.order_by("queue_position"))
+        self.assertEqual([i.status for i in items], ["abgesagt", "offen", "eingereiht"])
+        self.assertIn("raum@b.example", [m.to[0] for m in mail.outbox])
+        # Zweiter Ort sagt zu → Rest entfällt, dritter bekommt nie eine Mail
+        to_b = [m for m in mail.outbox if m.to == ["raum@b.example"]][-1]
+        self.client.post(extract_url(to_b.body).replace("http://testserver", ""), {"action": "accept"})
+        items = list(UsageRequest.objects.order_by("queue_position"))
+        self.assertEqual([i.status for i in items], ["abgesagt", "zugesagt", "entfallen"])
+        self.assertNotIn("gast@example.org", [m.to[0] for m in mail.outbox])
+
+    def test_series_expiry_moves_on_and_ends(self):
+        self.series(self.public, self.public_b)
+        UsageRequest.objects.filter(status="offen").update(expires_at=timezone.now() - timedelta(days=1))
+        expire_usage_requests()
+        self.assertEqual(UsageRequest.objects.get(venue=self.public_b).status, UsageRequest.Status.OPEN)
+        UsageRequest.objects.filter(status="offen").update(expires_at=timezone.now() - timedelta(days=1))
+        expire_usage_requests()
+        self.assertIn("beendet", mail.outbox[-1].subject)
+        self.post(self.public)  # Termin wieder frei
+        self.assertEqual(UsageRequest.objects.filter(status="offen").count(), 1)
+
+    def test_series_blocked_by_existing_request_for_slot(self):
+        self.post(self.public)
+        self.assertContains(self.series(self.public_b), "Pro Termin ist nur eine Anfrage")
+
+    def test_end_series(self):
+        self.series(self.public, self.public_b)
+        first = UsageRequest.objects.get(queue_position=1)
+        self.client.post(reverse("venues:request_action", args=[first.pk]), {"action": "end_series"})
+        self.assertEqual(set(UsageRequest.objects.values_list("status", flat=True)), {"zurueckgezogen", "entfallen"})

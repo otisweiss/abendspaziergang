@@ -3,7 +3,8 @@ import secrets
 from datetime import timedelta
 
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage, send_mail
+from django.db import transaction
 from django.db.models.base import ModelState
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -15,11 +16,13 @@ class ListingRequestError(Exception):
     pass
 
 
-def send_templated_mail(template, to, context):
+def send_templated_mail(template, to, context, reply_to=None, from_email=None):
     context = {"SITE_NAME": settings.SITE_NAME, "SITE_URL": settings.SITE_URL, "OPERATOR_NAME": settings.OPERATOR_NAME, **context}
     subject = render_to_string(f"emails/{template}_subject.txt", context).strip()
     body = render_to_string(f"emails/{template}.txt", context)
-    send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [to])
+    EmailMessage(
+        subject, body, from_email or settings.DEFAULT_FROM_EMAIL, [to], reply_to=[reply_to] if reply_to else None
+    ).send()
 
 
 def notify_moderation(subject, text):
@@ -141,57 +144,200 @@ def confirm_still_current(venue):
     venue.save(update_fields=["last_confirmed_at", "freshness_check_sent_at", "freshness_reminder_sent_at", "paused_reason", "updated_at"])
 
 
-# --- Nutzungsanfragen an nicht öffentliche Orte -------------------------------
+# --- Raumanfragen über die zentrale Anfrage-Adresse -----------------------------
+#
+# Alle Anfragen gehen von settings.REQUEST_FROM_EMAIL raus. Reply-To ist die Antwort-Adresse
+# der Gruppe, der Raumgeber kann also einfach auf „Antworten“ klicken. Pro Gruppe läuft für
+# einen Termin immer nur eine Anfrage (siehe RequestBaseForm). Reihenanfragen fragen die Orte
+# nacheinander an: Erst nach einer Absage, einem Rückzug oder Ablauf kommt der nächste dran.
 
 
-def create_usage_request(form, venue, user, batch=""):
-    request_obj = form.save(commit=False)
-    if batch:
-        # Für jeden Ort ein eigenes Objekt aus denselben Formulardaten
-        request_obj = copy.copy(request_obj)
-        request_obj._state = ModelState()
-        request_obj.pk = None
-        request_obj.room = None
-    request_obj.batch = batch
-    request_obj.venue = venue
-    request_obj.user = user
+def _request_mail(template, to, context, reply_to=None):
+    send_templated_mail(template, to, context, reply_to=reply_to, from_email=settings.REQUEST_FROM_EMAIL)
+
+
+def _activate(request_obj):
+    """Schickt eine (eingereihte oder neue) Anfrage an den Raumgeber."""
+    from .models import UsageRequest
+
+    venue = request_obj.venue
+    request_obj.status = UsageRequest.Status.OPEN
     request_obj.expires_at = timezone.now() + timedelta(days=settings.USAGE_REQUEST_VALIDITY_DAYS)
     token = request_obj.issue_token()
     request_obj.save()
-    send_templated_mail(
+    _request_mail(
         "usage_request",
-        venue.manager_email,
+        venue.request_recipient,
         {
             "venue": venue,
             "req": request_obj,
-            "group": getattr(user, "group_profile", None),
+            "group": getattr(request_obj.user, "group_profile", None),
             "url": request_obj.respond_url(token),
             "days": settings.USAGE_REQUEST_VALIDITY_DAYS,
         },
+        reply_to=request_obj.reply_email,
     )
+
+
+def _copy_request(request_obj):
+    clone = copy.copy(request_obj)
+    clone._state = ModelState()
+    clone.pk = None
+    return clone
+
+
+def create_usage_request(form, venue, user):
+    request_obj = form.save(commit=False)
+    request_obj.venue = venue
+    request_obj.user = user
+    with transaction.atomic():
+        _activate(request_obj)
     return request_obj
 
 
+def create_series_request(form, venues, user):
+    """Reihenanfrage: der erste Ort wird sofort angefragt, die übrigen werden eingereiht."""
+    from .models import UsageRequest
+
+    batch = secrets.token_hex(8)
+    template = form.save(commit=False)
+    created = []
+    with transaction.atomic():
+        for position, venue in enumerate(venues, start=1):
+            item = _copy_request(template)
+            item.venue, item.user, item.room = venue, user, None
+            item.batch, item.queue_position = batch, position
+            if position == 1:
+                _activate(item)
+            else:
+                item.status = UsageRequest.Status.QUEUED
+                item.token_hash = ""
+                item.save()
+            created.append(item)
+    return batch, created
+
+
+def advance_series(request_obj):
+    """Nach einer Absage, einem Rückzug oder Ablauf: nächsten Ort der Reihe anfragen."""
+    from .models import UsageRequest
+
+    if not request_obj.batch:
+        return None
+    nxt = (
+        UsageRequest.objects.filter(batch=request_obj.batch, status=UsageRequest.Status.QUEUED)
+        .order_by("queue_position")
+        .select_related("venue", "user")
+        .first()
+    )
+    if nxt is None:
+        if not UsageRequest.objects.filter(batch=request_obj.batch, status=UsageRequest.Status.ACCEPTED).exists():
+            _request_mail("series_exhausted", request_obj.reply_email, {"req": request_obj})
+        return None
+    if not nxt.venue.accepts_platform_requests:
+        nxt.status = UsageRequest.Status.CANCELLED
+        nxt.save(update_fields=["status"])
+        return advance_series(nxt)
+    _activate(nxt)
+    _request_mail("series_next", nxt.reply_email, {"req": nxt, "previous": request_obj})
+    return nxt
+
+
+def cancel_rest_of_series(request_obj):
+    from .models import UsageRequest
+
+    if request_obj.batch:
+        UsageRequest.objects.filter(batch=request_obj.batch, status=UsageRequest.Status.QUEUED).update(
+            status=UsageRequest.Status.CANCELLED
+        )
+
+
 def answer_usage_request(request_obj, accept, note=""):
+    """Antwort des Raumgebers über den Link aus der E-Mail."""
     from .models import UsageRequest
 
     request_obj.status = UsageRequest.Status.ACCEPTED if accept else UsageRequest.Status.DECLINED
+    request_obj.confirmed_by_host = accept
     request_obj.response_note = note[:500]
     request_obj.answered_at = timezone.now()
     request_obj.token_hash = ""
     request_obj.save()
+    venue = request_obj.venue
     template = "usage_accepted" if accept else "usage_declined"
-    send_templated_mail(
+    # Bei einer Zusage antwortet die Gruppe direkt an den Kontakt des Ortes.
+    _request_mail(
         template,
         request_obj.reply_email,
-        {"req": request_obj, "venue": request_obj.venue, "url": settings.SITE_URL + request_obj.venue.get_absolute_url()},
+        {"req": request_obj, "venue": venue, "url": settings.SITE_URL + venue.get_absolute_url()},
+        reply_to=venue.contact_email if accept and venue.contact_email else None,
     )
+    if accept:
+        cancel_rest_of_series(request_obj)
+    else:
+        advance_series(request_obj)
     # Eine Antwort zählt auch als Lebenszeichen des Raumgebers.
-    confirm_still_current(request_obj.venue)
+    if venue.status == Venue.Status.LISTED:
+        confirm_still_current(venue)
 
 
-def create_batch_request(form, venues, user):
-    """Schickt dieselbe Anfrage an mehrere nicht öffentliche Orte. Jeder Raumgeber sieht nur seine eigene."""
-    batch = secrets.token_hex(8)
-    created = [create_usage_request(form, venue, user, batch=batch) for venue in venues]
-    return batch, created
+def mark_outcome_by_group(request_obj, outcome):
+    """Die Gruppe hat direkt per E-Mail eine Antwort bekommen und trägt sie ein.
+
+    Eine so eingetragene Zusage schaltet bei nicht öffentlichen Orten keine Details frei.
+    """
+    from .models import UsageRequest
+
+    request_obj.answered_at = timezone.now()
+    request_obj.token_hash = ""
+    if outcome == "zugesagt":
+        request_obj.status = UsageRequest.Status.ACCEPTED
+        request_obj.save()
+        cancel_rest_of_series(request_obj)
+    else:
+        request_obj.status = UsageRequest.Status.DECLINED
+        request_obj.save()
+        advance_series(request_obj)
+
+
+def withdraw_usage_request(request_obj):
+    """Gruppe zieht eine Anfrage zurück. Bei einer offenen Reihe kommt der nächste Ort dran."""
+    from .models import UsageRequest
+
+    previous = request_obj.status
+    request_obj.status = UsageRequest.Status.WITHDRAWN if previous != UsageRequest.Status.QUEUED else UsageRequest.Status.CANCELLED
+    request_obj.token_hash = ""
+    request_obj.save(update_fields=["status", "token_hash"])
+    if previous in (UsageRequest.Status.OPEN, UsageRequest.Status.ACCEPTED):
+        _request_mail(
+            "usage_withdrawn", request_obj.venue.request_recipient, {"req": request_obj, "venue": request_obj.venue},
+            reply_to=request_obj.reply_email,
+        )
+    if previous == UsageRequest.Status.OPEN:
+        advance_series(request_obj)
+
+
+def end_series(request_obj):
+    """Ganze Reihe beenden: offene Anfrage zurückziehen, eingereihte streichen."""
+    from .models import UsageRequest
+
+    cancel_rest_of_series(request_obj)
+    current = UsageRequest.objects.filter(batch=request_obj.batch, status=UsageRequest.Status.OPEN).first()
+    if current:
+        withdraw_usage_request(current)
+
+
+def expire_usage_requests(now=None):
+    """Unbeantwortete Anfragen beenden, Gruppe informieren, Reihe fortsetzen. Täglich ausführen."""
+    from .models import UsageRequest
+
+    now = now or timezone.now()
+    count = 0
+    for item in UsageRequest.objects.filter(status=UsageRequest.Status.OPEN, expires_at__lt=now).select_related("venue", "user"):
+        item.status = UsageRequest.Status.EXPIRED
+        item.token_hash = ""
+        item.save(update_fields=["status", "token_hash"])
+        if item.batch:
+            advance_series(item)  # informiert die Gruppe über den nächsten Ort oder das Ende der Reihe
+        else:
+            _request_mail("usage_expired", item.reply_email, {"req": item, "venue": item.venue})
+        count += 1
+    return count

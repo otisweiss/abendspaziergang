@@ -125,36 +125,105 @@ RoomFormSet = inlineformset_factory(
 )
 
 
-class BatchRequestForm(forms.ModelForm):
-    """Sammelanfrage an alle passenden nicht öffentlichen Orte."""
+class RequestBaseForm(forms.ModelForm):
+    """Gemeinsame Felder und Regeln für Raumanfragen.
 
-    privacy = forms.BooleanField(
-        label="Ich bin einverstanden, dass die angefragten Raumgeber den Namen unserer Gruppe, meine Nachricht und "
-        "die Antwort-Adresse bekommen."
-    )
+    Pro Gruppe darf für einen Termin nur eine Anfrage laufen. Überschneidet sich der Termin mit
+    einer offenen, eingereihten oder zugesagten Anfrage, wird die neue abgelehnt.
+    """
+
+    REQUEST_FIELDS = ["occasion", "date", "time_from", "time_to", "weekly", "dates_note", "persons", "message", "reply_email"]
 
     class Meta:
         model = UsageRequest
-        fields = ["occasion", "dates", "persons", "message", "reply_email"]
-        widgets = {"message": forms.Textarea(attrs={"rows": 4}), "reply_email": forms.EmailInput(attrs={"autocomplete": "email"})}
+        fields = []
+        widgets = {
+            "message": forms.Textarea(attrs={"rows": 4}),
+            "reply_email": forms.EmailInput(attrs={"autocomplete": "email"}),
+            "date": forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+            "time_from": forms.TimeInput(attrs={"type": "time", "step": 900}, format="%H:%M"),
+            "time_to": forms.TimeInput(attrs={"type": "time", "step": 900}, format="%H:%M"),
+        }
+        help_texts = {
+            "reply_email": "Wir senden die Anfrage von unserer zentralen Adresse. Antworten des Raumgebers gehen direkt an diese Adresse.",
+        }
+
+    def __init__(self, *args, user, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        for name in ("date", "time_from", "time_to"):
+            self.fields[name].required = True
+        self.fields["persons"].min_value = 1
+
+    def clean(self):
+        from datetime import date as date_cls
+
+        data = super().clean()
+        day, start, end = data.get("date"), data.get("time_from"), data.get("time_to")
+        if day and day < date_cls.today():
+            self.add_error("date", "Bitte wählt ein Datum in der Zukunft.")
+        if start and end and end <= start:
+            self.add_error("time_to", "Die Endzeit muss nach der Startzeit liegen.")
+        if day and start and end and not self.errors:
+            conflict = self.find_conflict(day, start, end, data.get("weekly", False))
+            if conflict:
+                raise forms.ValidationError(
+                    f"Ihr habt für diesen Termin schon eine Anfrage laufen ({conflict.venue.display_title}, "
+                    f"{conflict.dates}, Status: {conflict.get_status_display()}). Pro Termin ist nur eine Anfrage "
+                    "möglich. Wartet die Antwort ab, vermerkt eine Absage oder zieht die Anfrage unter „Meine Anfragen“ zurück."
+                )
+        return data
+
+    def find_conflict(self, day, start, end, weekly):
+        candidates = UsageRequest.objects.filter(user=self.user, status__in=UsageRequest.BLOCKING_STATUSES).select_related("venue")
+        return next((r for r in candidates if r.overlaps(day, start, end, weekly)), None)
 
 
-class UsageRequestForm(forms.ModelForm):
+class UsageRequestForm(RequestBaseForm):
     privacy = forms.BooleanField(
         label="Ich bin einverstanden, dass der Raumgeber den Namen unserer Gruppe, meine Nachricht und die "
         "Antwort-Adresse bekommt."
     )
 
-    class Meta:
-        model = UsageRequest
-        fields = ["room", "occasion", "dates", "persons", "message", "reply_email"]
-        widgets = {"message": forms.Textarea(attrs={"rows": 4}), "reply_email": forms.EmailInput(attrs={"autocomplete": "email"})}
+    class Meta(RequestBaseForm.Meta):
+        fields = ["room"] + RequestBaseForm.REQUEST_FIELDS
 
     def __init__(self, *args, venue, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["room"].queryset = venue.rooms.all()
         self.fields["room"].empty_label = "egal / weiß nicht"
-        self.fields["persons"].min_value = 1
+
+
+class SeriesRequestForm(RequestBaseForm):
+    """Reihenanfrage: dieselbe Anfrage geht nacheinander an mehrere Orte, nie gleichzeitig."""
+
+    venues = forms.ModelMultipleChoiceField(
+        label="Diese Orte nacheinander anfragen",
+        queryset=Venue.objects.none(),
+        widget=forms.CheckboxSelectMultiple,
+        help_text="In dieser Reihenfolge. Sagt ein Ort ab oder antwortet nicht, fragen wir automatisch den nächsten.",
+    )
+    privacy = forms.BooleanField(
+        label="Ich bin einverstanden, dass jeder angefragte Raumgeber den Namen unserer Gruppe, meine Nachricht und "
+        "die Antwort-Adresse bekommt."
+    )
+
+    class Meta(RequestBaseForm.Meta):
+        fields = RequestBaseForm.REQUEST_FIELDS
+
+    def __init__(self, *args, targets, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.targets = list(targets)
+        self.fields["venues"].queryset = Venue.objects.filter(pk__in=[v.pk for v in self.targets])
+        self.fields["venues"].label_from_instance = lambda v: f"{v.display_title} – {v.quarter}" + (
+            f", bis {v.max_capacity} Personen" if getattr(v, "max_capacity", None) else ""
+        )
+        if not self.is_bound:
+            self.initial["venues"] = [v.pk for v in self.targets]
+
+    def ordered_venues(self):
+        chosen = {v.pk for v in self.cleaned_data["venues"]}
+        return [v for v in self.targets if v.pk in chosen]
 
 
 class SubmissionForm(HoneypotMixin, VenueForm):

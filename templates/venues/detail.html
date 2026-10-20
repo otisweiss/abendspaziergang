@@ -67,21 +67,27 @@
       <p class="help">Schreibt bei der Anfrage: wer ihr seid, wofür ihr den Raum braucht, wie viele Personen kommen und wann. Sagt gern, dass ihr über {{ SITE_NAME }} kommt.</p>
       {% if venue.website %}<p><a href="{{ venue.website }}" rel="noopener noreferrer">Webseite des Ortes</a></p>{% endif %}
     </section>
-    {% elif open_request %}
+    {% endif %}
+    {% if open_request %}
     <section class="card" aria-labelledby="anfrage">
-      <h2 id="anfrage">Eure Anfrage ist unterwegs</h2>
-      <p>Ihr habt am {{ open_request.created_at|date:"d.m.Y" }} angefragt. Der Raumgeber hat bis zum {{ open_request.expires_at|date:"d.m.Y" }} Zeit zu antworten.
-        Wir schicken euch eine E-Mail.</p>
+      <h2 id="anfrage">Eure Anfrage läuft</h2>
+      {% if open_request.status == "eingereiht" %}
+        <p>Dieser Ort ist in eurer Reihenanfrage auf Platz {{ open_request.queue_position }}. Wir fragen ihn nur an, wenn die Orte davor absagen.</p>
+      {% else %}
+        <p>Angefragt am {{ open_request.created_at|date:"d.m.Y" }} für {{ open_request.dates }}. Der Raumgeber hat bis zum {{ open_request.expires_at|date:"d.m.Y" }} Zeit.
+          Er antwortet direkt an eure Antwort-Adresse oder über unseren Link.</p>
+      {% endif %}
       <p><a href="{% url 'venues:my_requests' %}">Zu meinen Anfragen</a></p>
     </section>
     {% elif request_form %}
     <section class="card" aria-labelledby="anfrage">
-      <h2 id="anfrage">Diesen Ort anfragen</h2>
-      {% if last_request %}<p class="help">Eure letzte Anfrage: {{ last_request.get_status_display }}. Ihr könnt neu anfragen.</p>{% endif %}
-      <p class="help">Wir leiten eure Anfrage per E-Mail weiter. Der Raumgeber sieht euren Gruppennamen, eure Nachricht und die Antwort-Adresse.</p>
+      <h2 id="anfrage">{% if venue.is_public %}Schneller: über {{ SITE_NAME }} anfragen{% else %}Diesen Ort anfragen{% endif %}</h2>
+      {% if last_request %}<p class="help">Eure letzte Anfrage hier: {{ last_request.get_status_display }}.</p>{% endif %}
+      <p class="help">Wir senden eure Anfrage von unserer zentralen Adresse. Antworten gehen direkt an eure Antwort-Adresse.
+        Pro Termin ist nur eine Anfrage möglich. Erst nach einer Absage oder wenn ihr sie zurückzieht, könnt ihr für denselben Termin woanders anfragen.</p>
       <form method="post" novalidate>{% csrf_token %}
         {% include "_form_errors.html" with form=request_form %}
-        {% for field in request_form %}{% include "_field.html" %}{% endfor %}
+        {% include "venues/_request_fields.html" with form=request_form %}
         <button class="btn" type="submit">Anfrage senden</button>
       </form>
     </section>

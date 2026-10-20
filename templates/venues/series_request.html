@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Reihenanfrage{% endblock %}
+{% block content %}
+<p><a href="{% url 'venues:search' %}?{{ querystring }}">← zurück zur Suche</a></p>
+<h1>Mehrere Orte nacheinander anfragen</h1>
+{% if targets %}
+  <p class="lead">Ihr schreibt eure Anfrage einmal. Wir schicken sie <strong>immer nur an einen Ort</strong>.</p>
+  <ol class="steps">
+    <li>Der erste Ort bekommt die Anfrage sofort. Die anderen warten in der Reihe.</li>
+    <li>Sagt der Ort ab oder antwortet nicht, fragen wir automatisch den nächsten an.</li>
+    <li>Sagt ein Ort zu, endet die Reihe. Die übrigen Orte bekommen keine Anfrage.</li>
+    <li>Unter „Meine Anfragen“ seht ihr, wo die Reihe gerade steht. Ihr könnt sie jederzeit beenden.</li>
+  </ol>
+  <p class="help">Pro Termin ist nur eine Anfrage möglich. Eine Reihe erreicht höchstens {{ max_targets }} Orte.
+    Bei nicht öffentlichen Orten seht ihr Name und Adresse erst nach einer Zusage.</p>
+  <form method="post" class="narrow" novalidate>{% csrf_token %}
+    {% include "_form_errors.html" %}
+    {% include "_field.html" with field=form.venues %}
+    {% include "venues/_request_fields.html" %}
+    <button class="btn btn-large" type="submit">Reihenanfrage starten</button>
+  </form>
+{% else %}
+  <div class="panel"><p>Zu eurer Suche gibt es gerade keine Orte, die Anfragen über {{ SITE_NAME }} annehmen.
+    Versucht es mit weniger Filtern oder fragt öffentliche Orte direkt an.</p></div>
+{% endif %}
+{% endblock %}

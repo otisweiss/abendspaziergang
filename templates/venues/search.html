@@ -36,14 +36,14 @@
   <section class="results" aria-labelledby="ergebnis">
     <h2 id="ergebnis" class="result-count" aria-live="polite"><strong>{{ total }}</strong> Ort{{ total|pluralize:"e" }} gefunden</h2>
 
-    {% if batch_count %}
+    {% if series_count > 1 %}
       <div class="panel panel-accent batch-cta">
-        <p><strong>{{ batch_count }} nicht öffentliche{{ batch_count|pluralize:"r,"}} Ort{{ batch_count|pluralize:"e" }}</strong> pass{{ batch_count|pluralize:"t,en" }} zu eurer Suche.
-          Das sind oft private Räume. Ihr könnt alle auf einmal anfragen. Name und Adresse seht ihr erst, wenn jemand zusagt.</p>
-        <a class="btn" href="{% url 'venues:batch_request' %}?{{ querystring }}">Alle passenden Orte anfragen</a>
+        <p><strong>{{ series_count }} Orte</strong> passen und nehmen Anfragen über {{ SITE_NAME }} an. Mit einer <strong>Reihenanfrage</strong>
+          schreibt ihr die Anfrage nur einmal. Wir fragen die Orte <strong>nacheinander</strong> an: Sagt einer ab, kommt automatisch der nächste dran.</p>
+        <a class="btn" href="{% url 'venues:series_request' %}?{{ querystring }}">Reihenanfrage starten</a>
       </div>
     {% elif not location_chosen %}
-      <p class="help">Tipp: Wählt einen Stadtbezirk oder Stadtteil. Dann könnt ihr auch alle passenden nicht öffentlichen Orte auf einmal anfragen.</p>
+      <p class="help">Tipp: Wählt einen Stadtbezirk oder Stadtteil. Dann könnt ihr mehrere passende Orte nacheinander anfragen.</p>
     {% endif %}
 
     {% include "_map.html" %}

@@ -3,7 +3,7 @@ Hallo,
 auf eure Anfrage kam leider keine Antwort.
 Anfrage: {{ req.occasion }} ({{ req.dates }})
 
-Die Anfrage ist jetzt beendet.
+Die Anfrage ist jetzt beendet. Der Termin ist für euch wieder frei.
 In der Suche findet ihr weitere Räume:
 {{ SITE_URL }}/suche/
 

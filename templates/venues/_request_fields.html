@@ -1,0 +1,16 @@
+{% if form.room %}{% include "_field.html" with field=form.room %}{% endif %}
+{% include "_field.html" with field=form.occasion %}
+<fieldset class="when">
+  <legend>Wann braucht ihr den Raum?</legend>
+  <div class="grid-3">
+    {% include "_field.html" with field=form.date %}
+    {% include "_field.html" with field=form.time_from %}
+    {% include "_field.html" with field=form.time_to %}
+  </div>
+  {% include "_field.html" with field=form.weekly %}
+  {% include "_field.html" with field=form.dates_note %}
+</fieldset>
+{% include "_field.html" with field=form.persons %}
+{% include "_field.html" with field=form.message %}
+{% include "_field.html" with field=form.reply_email %}
+{% include "_field.html" with field=form.privacy %}

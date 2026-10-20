@@ -1,1 +1,1 @@
-Anfrage für euren Raum: {{ req.occasion|truncatechars:60 }}
+Raumanfrage für {{ req.dates }}: {{ req.occasion|truncatechars:50 }}

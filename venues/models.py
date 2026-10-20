@@ -59,7 +59,9 @@ class VenueQuerySet(models.QuerySet):
         if not user.is_authenticated:
             return set()
         return set(
-            UsageRequest.objects.filter(user=user, status=UsageRequest.Status.ACCEPTED).values_list("venue_id", flat=True)
+            UsageRequest.objects.filter(
+                user=user, status=UsageRequest.Status.ACCEPTED, confirmed_by_host=True
+            ).values_list("venue_id", flat=True)
         )
 
 
@@ -219,6 +221,17 @@ class Venue(models.Model):
         if self.is_public:
             return self.name
         return self.public_title or f"Nicht öffentlicher Raum in {self.quarter or 'Köln'}"
+
+    @property
+    def request_recipient(self):
+        """Adresse für Raumanfragen über die Plattform: bei öffentlichen Orten der Anfrage-Kontakt."""
+        if self.is_public:
+            return self.contact_email or self.manager_email
+        return self.manager_email or self.contact_email
+
+    @property
+    def accepts_platform_requests(self):
+        return self.is_visible and bool(self.request_recipient)
 
     def needs_freshness_check_since(self):
         return self.last_confirmed_at or self.consent_at or self.created_at
@@ -384,25 +397,37 @@ class Bookmark(models.Model):
 
 
 class UsageRequest(models.Model):
-    """Nutzungsanfrage einer Gruppe an einen nicht öffentlichen Ort.
+    """Raumanfrage einer Gruppe, verschickt über die zentrale Anfrage-Adresse.
 
-    Der Raumgeber bekommt die Anfrage per E-Mail und sagt zu oder ab. Erst nach der Zusage
-    sieht die Gruppe Name, Adresse und Kontakt des Ortes. Die E-Mail-Adresse des Raumgebers
-    bleibt bis dahin verborgen.
+    Antworten gehen direkt an die Antwort-Adresse der Gruppe (Reply-To). Pro Gruppe darf für
+    einen Termin nur eine Anfrage laufen (offen, eingereiht oder zugesagt). Erst nach Absage,
+    Rückzug oder Ablauf ist der Termin wieder frei. Bei nicht öffentlichen Orten sieht die Gruppe
+    Name, Adresse und Kontakt erst, wenn der Raumgeber über den Link zusagt.
     """
 
     class Status(models.TextChoices):
+        QUEUED = "eingereiht", "Eingereiht (wird angefragt, falls der vorige Ort absagt)"
         OPEN = "offen", "Wartet auf Antwort"
         ACCEPTED = "zugesagt", "Zugesagt"
         DECLINED = "abgesagt", "Abgesagt"
         EXPIRED = "abgelaufen", "Ohne Antwort abgelaufen"
         WITHDRAWN = "zurueckgezogen", "Von der Gruppe zurückgezogen"
+        CANCELLED = "entfallen", "Entfallen (Reihe beendet oder anderer Ort hat zugesagt)"
+
+    # Diese Status belegen den Termin. Neue Anfragen für denselben Termin sind dann gesperrt.
+    BLOCKING_STATUSES = ("eingereiht", "offen", "zugesagt")
 
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="usage_requests")
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="usage_requests")
     room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Raum")
     occasion = models.CharField("Wofür braucht ihr den Raum?", max_length=200)
-    dates = models.CharField("Wann?", max_length=200, help_text="z. B. „Samstag, 14. März, 19–22 Uhr“ oder „jeden Dienstagabend“")
+    date = models.DateField("Datum", null=True, help_text="Bei regelmäßiger Nutzung: der erste Termin.")
+    time_from = models.TimeField("von", null=True)
+    time_to = models.TimeField("bis", null=True)
+    weekly = models.BooleanField("Regelmäßig, jede Woche zur selben Zeit", default=False)
+    dates_note = models.CharField(
+        "Hinweise zum Termin (freiwillig)", max_length=200, blank=True, help_text="z. B. „Aufbau ab 18 Uhr“ oder „bis zu den Sommerferien“"
+    )
     persons = models.PositiveIntegerField("Wie viele Personen?")
     message = models.TextField(
         "Nachricht an den Raumgeber",
@@ -411,12 +436,17 @@ class UsageRequest(models.Model):
         help_text="Stellt euch kurz vor. Bitte keine Daten anderer Personen.",
     )
     reply_email = models.EmailField("Antwort an diese E-Mail-Adresse")
-    batch = models.CharField("Sammelanfrage", max_length=32, blank=True, db_index=True, editable=False)
+    batch = models.CharField("Reihenanfrage", max_length=32, blank=True, db_index=True, editable=False)
+    queue_position = models.PositiveSmallIntegerField("Platz in der Reihe", null=True, blank=True, editable=False)
+    confirmed_by_host = models.BooleanField(
+        "Zusage über den Link des Raumgebers", default=False, editable=False,
+        help_text="Nur dann sieht die Gruppe die Details eines nicht öffentlichen Ortes.",
+    )
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.OPEN, db_index=True)
     response_note = models.CharField("Antwort des Raumgebers", max_length=500, blank=True)
     token_hash = models.CharField(max_length=64, db_index=True, editable=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
+    expires_at = models.DateTimeField(null=True, blank=True)
     answered_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -426,6 +456,37 @@ class UsageRequest(models.Model):
 
     def __str__(self):
         return f"Anfrage an {self.venue.display_title} ({self.get_status_display()})"
+
+    @property
+    def dates(self):
+        """Termin als lesbarer Text, z. B. „Sa, 14.03.2027, 19:00–22:00 Uhr, wöchentlich“."""
+        if not self.date:
+            return self.dates_note
+        days = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
+        text = f"{days[self.date.weekday()]}, {self.date:%d.%m.%Y}"
+        if self.time_from and self.time_to:
+            text += f", {self.time_from:%H:%M}–{self.time_to:%H:%M} Uhr"
+        if self.weekly:
+            text += ", jede Woche"
+        if self.dates_note:
+            text += f" ({self.dates_note})"
+        return text
+
+    def overlaps(self, date, time_from, time_to, weekly):
+        """Überschneidet sich dieser Termin mit dem angegebenen? Wöchentliche Termine gelten ab ihrem Startdatum."""
+        if not (self.date and self.time_from and self.time_to):
+            return False
+        if not (self.time_from < time_to and time_from < self.time_to):
+            return False
+        if self.date == date:
+            return True
+        if self.weekly and weekly:
+            return self.date.weekday() == date.weekday()
+        if self.weekly:
+            return date > self.date and date.weekday() == self.date.weekday()
+        if weekly:
+            return self.date > date and self.date.weekday() == date.weekday()
+        return False
 
     def issue_token(self):
         token = secrets.token_urlsafe(32)

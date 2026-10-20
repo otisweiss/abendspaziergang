@@ -212,12 +212,15 @@ FRESHNESS_INTERVAL_DAYS = int(env("FRESHNESS_INTERVAL_DAYS", "180"))
 FRESHNESS_REMINDER_DAYS = int(env("FRESHNESS_REMINDER_DAYS", "21"))
 FRESHNESS_PAUSE_DAYS = int(env("FRESHNESS_PAUSE_DAYS", "42"))
 
-# Nutzungsanfragen an nicht öffentliche Orte
-USAGE_REQUEST_VALIDITY_DAYS = int(env("USAGE_REQUEST_VALIDITY_DAYS", "14"))
+# Raumanfragen gehen von dieser zentralen Adresse raus; Antworten gehen per Reply-To an die Gruppe.
+REQUEST_FROM_EMAIL = env("REQUEST_FROM_EMAIL", DEFAULT_FROM_EMAIL)
+
+# Raumanfragen
+USAGE_REQUEST_VALIDITY_DAYS = int(env("USAGE_REQUEST_VALIDITY_DAYS", "10"))
 USAGE_REQUEST_RETENTION_DAYS = int(env("USAGE_REQUEST_RETENTION_DAYS", "365"))
 MAX_USAGE_REQUESTS_PER_DAY = int(env("MAX_USAGE_REQUESTS_PER_DAY", "5"))
-# Höchstzahl der Orte, die eine Sammelanfrage erreicht (schützt private Raumgeber vor zu vielen Mails)
-MAX_BATCH_TARGETS = int(env("MAX_BATCH_TARGETS", "10"))
+# Höchstzahl der Orte in einer Reihenanfrage (sie werden nacheinander angefragt, nie gleichzeitig)
+MAX_SERIES_TARGETS = int(env("MAX_SERIES_TARGETS", "5"))
 
 # Höchstzahl der Listungsanfragen pro Ort (Erstanfrage + eine Erinnerung)
 MAX_LISTING_REQUESTS = int(env("MAX_LISTING_REQUESTS", "2"))

@@ -14,15 +14,16 @@ from django.views.decorators.http import require_POST
 from django.conf import settings
 
 from .forms import (
-    BatchRequestForm, ConsentForm, RequestLinkForm, RespondForm, RoomFormSet, SearchForm, SubmissionForm, UsageRequestForm, VenueForm,
+    ConsentForm, RequestLinkForm, RespondForm, RoomFormSet, SearchForm, SeriesRequestForm, SubmissionForm, UsageRequestForm,
+    VenueForm,
 )
 from .koeln import ALL_QUARTERS, DISTRICTS
 from .models import Bookmark, ListingRequest, UsageRequest, Venue
 from .ratelimit import is_limited
 from .search import search_venues
 from .services import (
-    answer_usage_request, close_open_requests, confirm_still_current, create_batch_request, create_usage_request,
-    notify_moderation,
+    answer_usage_request, close_open_requests, confirm_still_current, create_series_request, create_usage_request,
+    end_series, mark_outcome_by_group, notify_moderation, withdraw_usage_request,
     send_new_edit_link, send_submission_confirmation,
 )
 
@@ -76,9 +77,9 @@ def search(request):
         if v.has_location and (v.is_public or v.pk in accessible)
     ]
     bookmarked = set(request.user.bookmarks.values_list("venue_id", flat=True))
-    batch_count = 0
+    series_count = 0
     if data.get("district") or data.get("quarter"):
-        batch_count = min(batch_targets(request.user, data, accessible).count(), settings.MAX_BATCH_TARGETS)
+        series_count = min(len(series_targets(data, accessible)), settings.MAX_SERIES_TARGETS)
     return render(
         request,
         "venues/search.html",
@@ -90,7 +91,7 @@ def search(request):
             "map_points": map_points,
             "bookmarked": bookmarked,
             "accessible": accessible,
-            "batch_count": batch_count,
+            "series_count": series_count,
             "location_chosen": bool(data.get("district") or data.get("quarter")),
         },
     )
@@ -102,19 +103,22 @@ def detail(request, pk):
     if not venue.is_visible and not request.user.is_staff:
         raise Http404
     has_access = venue.is_public or request.user.is_staff or pk in Venue.objects.accessible_ids(request.user)
-    own_requests = venue.usage_requests.filter(user=request.user) if not venue.is_public else UsageRequest.objects.none()
-    open_request = own_requests.filter(status=UsageRequest.Status.OPEN).first()
+    own_requests = venue.usage_requests.filter(user=request.user)
+    open_request = own_requests.filter(status__in=[UsageRequest.Status.OPEN, UsageRequest.Status.QUEUED]).first()
 
     request_form = None
-    if not has_access and open_request is None:
+    if venue.accepts_platform_requests and open_request is None:
         initial = {"reply_email": request.user.email}
-        request_form = UsageRequestForm(request.POST or None, venue=venue, initial=initial)
+        request_form = UsageRequestForm(request.POST or None, venue=venue, user=request.user, initial=initial)
         if request.method == "POST":
             if is_limited(request, f"usage:{request.user.pk}", limit=settings.MAX_USAGE_REQUESTS_PER_DAY, window_seconds=86400):
                 messages.error(request, "Ihr habt heute schon viele Anfragen geschickt. Bitte versucht es morgen wieder.")
             elif request_form.is_valid():
                 create_usage_request(request_form, venue, request.user)
-                messages.success(request, "Eure Anfrage ist verschickt. Ihr bekommt eine E-Mail, sobald der Raumgeber antwortet.")
+                messages.success(
+                    request,
+                    "Eure Anfrage ist verschickt. Der Raumgeber antwortet direkt an eure Antwort-Adresse oder über unseren Link.",
+                )
                 return redirect("venues:detail", pk=pk)
 
     map_points = []
@@ -135,61 +139,64 @@ def detail(request, pk):
     )
 
 
-def batch_targets(user, data, accessible):
-    """Nicht öffentliche Orte, die zur Suche passen und noch nicht angefragt sind."""
-    data = {**data, "visibility": Venue.Visibility.ON_REQUEST}
-    already = UsageRequest.objects.filter(user=user, status=UsageRequest.Status.OPEN).values_list("venue_id", flat=True)
-    return (
-        search_venues(data, accessible)
-        .exclude(pk__in=accessible)
-        .exclude(pk__in=already)
-        .exclude(manager_email="")
-    )
+def series_targets(data, accessible):
+    """Orte, die zur Suche passen und Anfragen über die Plattform annehmen (öffentlich mit E-Mail oder nicht öffentlich)."""
+    return [v for v in search_venues(data, accessible) if v.accepts_platform_requests]
 
 
 @group_required
-def batch_request(request):
-    """Sammelanfrage: an alle passenden nicht öffentlichen Orte in einem Stadtteil oder Bezirk."""
+def series_request(request):
+    """Reihenanfrage: dieselbe Anfrage geht nacheinander an mehrere passende Orte, nie gleichzeitig."""
     search_form = SearchForm(request.GET or None)
     data = search_form.cleaned_data if search_form.is_valid() else {}
     if not (data.get("district") or data.get("quarter")):
         messages.error(request, "Bitte wählt zuerst einen Stadtbezirk oder Stadtteil aus. Dann können wir passende Orte anfragen.")
         return redirect(f"{reverse('venues:search')}?{request.GET.urlencode()}")
     accessible = Venue.objects.accessible_ids(request.user)
-    targets = list(batch_targets(request.user, data, accessible)[: settings.MAX_BATCH_TARGETS])
-    form = BatchRequestForm(request.POST or None, initial={"reply_email": request.user.email})
+    targets = series_targets(data, accessible)[: settings.MAX_SERIES_TARGETS]
+    form = SeriesRequestForm(request.POST or None, user=request.user, targets=targets, initial={"reply_email": request.user.email})
     if request.method == "POST" and targets:
         if is_limited(request, f"usage:{request.user.pk}", limit=settings.MAX_USAGE_REQUESTS_PER_DAY, window_seconds=86400):
             messages.error(request, "Ihr habt heute schon viele Anfragen geschickt. Bitte versucht es morgen wieder.")
         elif form.is_valid():
-            _, created = create_batch_request(form, targets, request.user)
+            _, created = create_series_request(form, form.ordered_venues(), request.user)
             messages.success(
                 request,
-                f"Eure Anfrage ging an {len(created)} passende Orte. Ihr bekommt eine E-Mail, sobald jemand antwortet.",
+                f"Wir haben den ersten Ort angefragt. {len(created) - 1} weitere Orte sind eingereiht und werden nur "
+                "angefragt, wenn der vorige absagt oder nicht antwortet.",
             )
             return redirect("venues:my_requests")
     return render(
         request,
-        "venues/batch_request.html",
-        {"form": form, "targets": targets, "search_form": search_form, "querystring": request.GET.urlencode(),
-         "max_targets": settings.MAX_BATCH_TARGETS},
+        "venues/series_request.html",
+        {"form": form, "targets": targets, "querystring": request.GET.urlencode(), "max_targets": settings.MAX_SERIES_TARGETS},
     )
 
 
 @group_required
 def my_requests(request):
-    items = request.user.usage_requests.select_related("venue", "room")
+    items = request.user.usage_requests.select_related("venue", "room").order_by("-created_at", "queue_position")
     return render(request, "venues/my_requests.html", {"items": items})
 
 
 @require_POST
 @group_required
-def withdraw_request(request, pk):
-    item = get_object_or_404(UsageRequest, pk=pk, user=request.user, status=UsageRequest.Status.OPEN)
-    item.status = UsageRequest.Status.WITHDRAWN
-    item.token_hash = ""
-    item.save(update_fields=["status", "token_hash"])
-    messages.success(request, "Die Anfrage ist zurückgezogen.")
+def request_action(request, pk):
+    """Aktionen der Gruppe: zurückziehen, Antwort vermerken, Reihe beenden."""
+    item = get_object_or_404(UsageRequest.objects.select_related("venue"), pk=pk, user=request.user)
+    action = request.POST.get("action")
+    S = UsageRequest.Status
+    if action == "withdraw" and item.status in (S.OPEN, S.QUEUED, S.ACCEPTED):
+        withdraw_usage_request(item)
+        messages.success(request, "Die Anfrage ist zurückgezogen. Der Termin ist für neue Anfragen wieder frei.")
+    elif action in ("zugesagt", "abgesagt") and item.status == S.OPEN:
+        mark_outcome_by_group(item, action)
+        messages.success(request, "Danke, wir haben die Antwort vermerkt.")
+    elif action == "end_series" and item.batch:
+        end_series(item)
+        messages.success(request, "Die Reihe ist beendet. Es werden keine weiteren Orte angefragt.")
+    else:
+        messages.error(request, "Diese Aktion ist für die Anfrage nicht möglich.")
     return redirect("venues:my_requests")
 
 

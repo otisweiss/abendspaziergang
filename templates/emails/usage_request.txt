@@ -1,25 +1,30 @@
-Hallo,
+Guten Tag,
 
 eine Gruppe möchte euren Raum „{{ venue.name }}“ nutzen.
 Die Anfrage kommt über {{ SITE_NAME }}.
 
 Gruppe:    {% if group %}{{ group.name }} ({{ group.get_kind_display }}){% else %}–{% endif %}
 Wofür:     {{ req.occasion }}
-Wann:      {{ req.dates }}
-Personen:  {{ req.persons }}
+Termin:    {{ req.dates }}
+Personen:  {{ req.persons }}{% if req.room %}
+Raum:      {{ req.room.name }}{% endif %}
 {% if req.message %}
 Nachricht:
 {{ req.message }}
 {% endif %}
-Die Gruppe kennt euren Namen und eure Adresse noch nicht.
-Bitte antwortet über diesen Link:
+So könnt ihr antworten:
 
-{{ url }}
-
-- Wenn ihr zusagt, sieht diese Gruppe eure Kontaktangaben. Ihr sprecht dann alles direkt ab.
-- Wenn ihr absagt, sieht die Gruppe nichts von euch.
-
-Der Link gilt {{ days }} Tage. Danach endet die Anfrage von selbst.
+1. Einfach auf diese E-Mail antworten. Die Antwort geht direkt an die Gruppe
+   ({{ req.reply_email }}).
+2. Oder mit einem Klick zusagen oder absagen:
+   {{ url }}
+{% if not venue.is_public %}
+Die Gruppe kennt euren Namen und eure Adresse noch nicht. Sie sieht sie erst,
+wenn ihr über den Link zusagt. Wenn ihr direkt antwortet, sieht sie eure E-Mail-Adresse.
+{% endif %}
+Bitte antwortet auch, wenn es nicht passt. Die Gruppe darf für diesen Termin erst
+woanders anfragen, wenn ihr abgesagt habt. Ohne Antwort endet die Anfrage nach {{ days }} Tagen.
 
 Viele Grüße
 {{ OPERATOR_NAME }} für {{ SITE_NAME }}
+{{ SITE_URL }}

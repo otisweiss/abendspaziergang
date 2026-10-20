@@ -146,9 +146,10 @@ class ListingRequestAdmin(admin.ModelAdmin):
 class UsageRequestAdmin(admin.ModelAdmin):
     """Nur Metadaten. Nachrichten zwischen Gruppe und Raumgeber sieht die Redaktion nicht."""
 
-    list_display = ["venue", "batch", "persons", "status", "created_at", "answered_at"]
-    list_filter = ["status"]
-    fields = ["venue", "status", "batch", "persons", "created_at", "expires_at", "answered_at"]
+    list_display = ["venue", "date", "status", "batch", "queue_position", "created_at", "answered_at"]
+    list_filter = ["status", "confirmed_by_host"]
+    fields = ["venue", "status", "date", "time_from", "time_to", "weekly", "batch", "queue_position", "persons",
+              "confirmed_by_host", "created_at", "expires_at", "answered_at"]
     readonly_fields = fields
 
     def has_add_permission(self, request):

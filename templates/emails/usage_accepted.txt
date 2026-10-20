@@ -11,6 +11,7 @@ Name, Adresse und Kontakt seht ihr hier (nach der Anmeldung):
 {{ url }}
 
 Bitte meldet euch beim Raumgeber und sprecht alles Weitere ab.
+Ihr könnt dazu auch einfach auf diese E-Mail antworten.
 Mit der Zusage ist noch nichts gebucht.
 Bitte gebt die Adresse nicht weiter.
 

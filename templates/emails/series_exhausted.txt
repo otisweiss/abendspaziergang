@@ -1,0 +1,13 @@
+Hallo,
+
+wir haben alle Orte aus eurer Reihenanfrage angefragt.
+Leider hat kein Ort zugesagt.
+
+Anfrage:  {{ req.occasion }}
+Termin:   {{ req.dates }}
+
+Der Termin ist jetzt wieder frei. Ihr könnt neue Orte anfragen:
+{{ SITE_URL }}/suche/
+
+Viele Grüße
+{{ SITE_NAME }}

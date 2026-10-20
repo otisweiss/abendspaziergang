@@ -279,3 +279,9 @@ fieldset { min-width: 0; }
 .venue-card h3 a:focus-visible { outline: none; }
 .bookmark-form { z-index: 1; position: relative; top: auto; right: auto; }
 @media (min-width: 641px) { .bookmark-form { position: absolute; top: 16px; right: 20px; } }
+/* Raumanfrage: Terminblock und Aktionen */
+.when { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 16px; margin: 0 0 14px; }
+.when legend { font-size: 1rem; padding: 0 6px; }
+.action-row { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.action-row .linklike, .data-table .linklike { min-height: 32px; text-align: left; }
+.badge-req-eingereiht, .badge-req-entfallen, .badge-req-zurueckgezogen { background: var(--bg); color: var(--muted); }

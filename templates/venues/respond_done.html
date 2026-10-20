@@ -2,7 +2,7 @@
 {% block title %}Antwort gesendet{% endblock %}
 {% block content %}
 <div class="panel"><h1>{% if accepted %}Danke für eure Zusage!{% else %}Eure Absage ist verschickt{% endif %}</h1>
-{% if accepted %}<p>Die Gruppe bekommt jetzt eine E-Mail und sieht eure Kontaktangaben. Sie meldet sich bei euch.</p>
+{% if accepted %}<p>Die Gruppe bekommt jetzt eine E-Mail{% if not item.venue.is_public %} und sieht eure Kontaktangaben{% endif %}. Sie meldet sich bei euch.</p>
 {% else %}<p>Die Gruppe bekommt eine kurze Nachricht. Sie sieht keine Angaben zu euch.</p>{% endif %}
 <p>Wir haben gleichzeitig vermerkt, dass euer Angebot noch aktuell ist.</p></div>
 {% endblock %}

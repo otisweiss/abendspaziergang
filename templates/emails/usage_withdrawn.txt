@@ -1,0 +1,11 @@
+Guten Tag,
+
+die Gruppe hat ihre Anfrage für „{{ venue.name }}“ zurückgezogen.
+
+Wofür:   {{ req.occasion }}
+Termin:  {{ req.dates }}
+
+Ihr müsst nichts weiter tun. Danke für eure Unterstützung!
+
+Viele Grüße
+{{ OPERATOR_NAME }} für {{ SITE_NAME }}
