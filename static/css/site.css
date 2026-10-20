@@ -285,3 +285,30 @@ fieldset { min-width: 0; }
 .action-row { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .action-row .linklike, .data-table .linklike { min-height: 32px; text-align: left; }
 .badge-req-eingereiht, .badge-req-entfallen, .badge-req-zurueckgezogen { background: var(--bg); color: var(--muted); }
+
+/* --- Mobiles Menü: volle Breite unter der Kopfzeile ------------------------------ */
+.site-header { position: relative; z-index: 30; }
+.header-inner { align-items: center; flex-wrap: nowrap; }
+.menu .when-open { display: none; }
+.menu[open] .when-open { display: inline; }
+.menu[open] .when-closed { display: none; }
+.menu-toggle { background: var(--surface); }
+.menu[open] > .menu-toggle { border-color: var(--accent); color: var(--accent); }
+@media (max-width: 899px) {
+  .menu[open] > nav {
+    position: absolute; left: 0; right: 0; top: 100%; margin-top: 0;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    box-shadow: 0 12px 24px rgb(0 0 0 / 0.12);
+    padding: 4px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+  }
+  .site-header nav li { border-bottom: 1px solid var(--border); }
+  .site-header nav li:last-child { border-bottom: 0; }
+  .site-header nav a, .site-header nav .linklike {
+    display: flex; align-items: center; min-height: 48px; padding: 0; width: 100%; font-size: 1.05rem;
+  }
+  .site-header nav .btn-small { justify-content: center; margin-top: 10px; min-height: 44px; color: var(--accent-ink); }
+  .site-header nav a[aria-current="page"] { border-left: 4px solid var(--accent); padding-left: 10px; margin-left: -14px; }
+}
+@media (min-width: 900px) {
+  .header-inner { flex-wrap: wrap; }
+}

@@ -15,7 +15,7 @@
     <div class="wrap header-inner">
       <a class="brand" href="{% url 'pages:home' %}"><span class="brand-mark" aria-hidden="true">▣</span> {{ SITE_NAME }}</a>
       <details class="menu" id="menu">
-      <summary class="menu-toggle"><span aria-hidden="true">☰</span> Menü</summary>
+      <summary class="menu-toggle"><span class="when-closed"><span aria-hidden="true">☰</span> Menü</span><span class="when-open"><span aria-hidden="true">✕</span> Schließen</span></summary>
       <nav aria-label="Hauptnavigation">
         {% with p=request.path %}
         <ul>
