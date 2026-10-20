@@ -263,7 +263,7 @@ input[type=text], input[type=email], input[type=password], input[type=url], inpu
   .data-table tr { display: block; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; margin-bottom: 12px; background: var(--surface); }
   .data-table td { display: grid; grid-template-columns: 7.5em 1fr; gap: 8px; border: 0; padding: 6px 0; }
   .data-table td::before { content: attr(data-label); font-weight: 600; color: var(--muted); }
-  .data-table td[data-label="Aktion"]:empty { display: none; }
+  .data-table td[data-label="Aktionen"] div:empty { display: none; }
   .slot-grid th, .slot-grid td { padding: 4px 6px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

@@ -12,12 +12,12 @@
   <tbody>
   {% for item in items %}
     <tr>
-      <td data-label="Ort"><a href="{{ item.venue.get_absolute_url }}">{% if item.venue.is_public or item.confirmed_by_host %}{{ item.venue.name }}{% else %}{{ item.venue.display_title }}{% endif %}</a>
-        {% if item.batch %}<br><span class="help">Reihenanfrage, Platz {{ item.queue_position }}</span>{% endif %}</td>
-      <td data-label="Termin">{{ item.occasion }}<br><span class="help">{{ item.dates }} · {{ item.persons }} Personen</span></td>
-      <td data-label="Status"><span class="badge badge-req-{{ item.status }}">{{ item.get_status_display }}</span>
-        {% if item.response_note %}<br><span class="help">„{{ item.response_note }}“</span>{% endif %}</td>
-      <td data-label="Aktionen">
+      <td data-label="Ort"><div><a href="{{ item.venue.get_absolute_url }}">{% if item.venue.is_public or item.confirmed_by_host %}{{ item.venue.name }}{% else %}{{ item.venue.display_title }}{% endif %}</a>
+        {% if item.batch %}<br><span class="help">Reihenanfrage, Platz {{ item.queue_position }}</span>{% endif %}</div></td>
+      <td data-label="Termin"><div>{{ item.occasion }}<br><span class="help">{{ item.dates }} · {{ item.persons }} Personen</span></div></td>
+      <td data-label="Status"><div><span class="badge badge-req-{{ item.status }}">{{ item.get_status_display }}</span>
+        {% if item.response_note %}<br><span class="help">„{{ item.response_note }}“</span>{% endif %}</div></td>
+      <td data-label="Aktionen"><div>
         {% if item.status == "offen" %}
           <form method="post" action="{% url 'venues:request_action' item.pk %}" class="action-row">{% csrf_token %}
             <button class="linklike" name="action" value="abgesagt" type="submit">Absage per E-Mail erhalten</button>
@@ -29,12 +29,12 @@
             <button class="linklike" name="action" value="withdraw" type="submit">{% if item.status == "zugesagt" %}Raum doch nicht nötig{% else %}Aus der Reihe nehmen{% endif %}</button>
           </form>
         {% endif %}
-        {% if item.batch and item.queue_position == 1 %}
+        {% if item.batch and item.status == "offen" %}
           <form method="post" action="{% url 'venues:request_action' item.pk %}">{% csrf_token %}
             <button class="linklike" name="action" value="end_series" type="submit">Ganze Reihe beenden</button>
           </form>
         {% endif %}
-      </td>
+      </div></td>
     </tr>
   {% endfor %}
   </tbody>
